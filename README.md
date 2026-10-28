@@ -1,25 +1,17 @@
 # Explain That
 
-An archive for learning Indian politics through newspaper cartoons. The planned collection covers cartoons from The Hindu and The Times of India across political eras, with historical context for each item.
+A weekly, image-led selection of Indian political cartoons. Each cartoon opens a short explainer written in our own words: a hook, the real political event behind the image, and a simple account of what the cartoonist is arguing. Factual claims link to sources below the explanation.
 
 ## Run locally
 
-Open `index.html` in a modern browser, or serve this folder with any static web server. For example:
+Open `index.html` in a modern browser, or serve this folder with any static web server. Open `editorial.html` separately for the private editorial desk. See [SUPABASE_SETUP.md](SUPABASE_SETUP.md) for the editor sign-in and database setup.
 
-```sh
-python3 -m http.server 8000
-```
+## Weekly issue rules
 
-Then visit `http://localhost:8000`. Open `editorial.html` separately for the private editorial desk. See [SUPABASE_SETUP.md](SUPABASE_SETUP.md) to apply the archive table update before creating entries.
+The public page shows approved cartoons dated in the current Monday-to-Sunday week. Cartoons appear as images only when display rights are verified. Candidate work stays private until reviewed and approved. Do not reuse artwork or explanatory copy from POLITICO’s gallery; it is a format reference only. The visual direction remains Justine Soulié’s portfolio, with Explain That’s existing gold frame and closable explainer.
 
-## Archive and rights
-
-The product is an editorial cartoon archive, not a live-trends feed. Entries should carry the publication date, newspaper, cartoonist when known, original source link, and a short explanation of the political context.
-
-Only cartoons with permission to display should appear as images. For other historical entries, keep a citation and link to the original publication rather than copying or hotlinking the artwork. Attribution alone is not permission. The Hindu and Times Group provide image/content licensing channels; obtain terms for the intended public website use before uploading archive images. Do not scrape publisher archives or bypass access controls.
-
-The Supabase protected editorial desk is retained for manually adding, reviewing, and publishing archive entries. Live GDELT, Reddit, Instagram, meme, and viral-video discovery are outside this product direction. See [SUPABASE_SETUP.md](SUPABASE_SETUP.md) for authentication and the archive database update.
+Write each explainer from the historical and political facts, in simple language. Start with a hook, name the real event and why it matters, explain the cartoonist’s point, and distinguish that opinion from confirmed facts. Add reliable sources for factual claims. Credit the artist and publication. Do not use an image merely because it is publicly viewable or credited.
 
 ## Hosting
 
-GitHub Pages publishes the public archive and the separate auth-gated editorial route. The Supabase publishable key in browser code is intended for public use; row-level security protects editorial data. Pushes to `main` trigger deployment.
+GitHub Pages publishes the public site and separate auth-gated editorial desk. The Supabase publishable key in browser code is intended for public use; row-level security protects editorial data.

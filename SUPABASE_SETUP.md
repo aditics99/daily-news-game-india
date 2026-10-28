@@ -1,33 +1,30 @@
-# Supabase setup for the cartoon archive
+# Supabase setup for the weekly cartoon desk
 
-The Supabase project is `explain-that`. The archive desk uses Supabase email sign-in and an editor allowlist. The public page reads approved archive entries only.
+The Supabase project is `explain-that`. The editorial desk uses email sign-in and an editor allowlist. The public page reads approved cartoons only.
 
 ## Sign in as the editor
 
-1. Open the separate [cartoon archive desk](https://aditics99.github.io/explain-that-political-cartoon/editorial.html).
+1. Open the separate [editorial desk](https://aditics99.github.io/explain-that-political-cartoon/editorial.html).
 2. Enter your email address and use the secure link Supabase sends you.
-3. The first sign-in creates your Supabase Auth user. Add that account to `public.editorial_admins` using the SQL statement shown by the desk.
-4. Refresh the desk to review and publish archive entries.
+3. Add your account to `public.editorial_admins` using the SQL statement shown by the desk.
+4. Refresh the desk to review and publish cartoons.
 
-## Apply the archive database update
+## Database migration
 
-The existing table needs archive metadata before the new entry form can save. In Supabase **SQL Editor**, run [`supabase/archive_migration.sql`](supabase/archive_migration.sql) once. It adds the newspaper, cartoonist, publication date, topics, original link, display mode, and permission fields. It also changes the public read policy so an image entry is visible only when display permission is confirmed; link-only entries show the original newspaper link.
+The archive fields used by the editorial form require the migration in [`supabase/archive_migration.sql`](supabase/archive_migration.sql). In Supabase **SQL Editor**, run it once. For a new Supabase project, run [`supabase/schema.sql`](supabase/schema.sql) first, then the archive migration.
 
-For a fresh Supabase project, run [`supabase/schema.sql`](supabase/schema.sql) first, then run the archive migration too. The migration is safe to run after the schema and ensures the archive-specific policy is in place.
+## Add a weekly cartoon
 
-## Add archive entries
+For each candidate, include the cartoon date, artist, publication or collection, original source link, rights evidence, an original short explainer, and links backing its factual claims. The explainer should open with a hook, explain the real event behind the cartoon and why it matters, describe the artist’s point in simple language, and separate opinion from confirmed fact.
 
-Each entry needs the newspaper, publication date, original newspaper page, a short archive label, and researched political context. Cartoonist and topic tags are optional. Choose **Link to original only** when reuse permission is unavailable. Choose **Display cartoon here** only after permission is secured; the form requires you to confirm that right and provide the permitted media URL.
+Candidates remain private until reviewed. The public page shows image files only when public-domain status or permission for this site's use is verified. A link and artist credit do not grant permission to republish artwork. Use POLITICO only as a weekly-format reference; do not copy its cartoons or explainer text. Justine Soulié remains the visual reference.
 
-Entries remain private candidates until reviewed and approved. The public archive groups published entries by year. Selecting a year opens its full-screen image carousel; selecting a cartoon opens the closable explainer overlay with context and the original link.
+## Rights handling
 
-## Rights and source handling
-
-The site does not scrape newspaper archives. Do not copy or hotlink an image just because it is publicly viewable or attributed. Request permission or a license for public display. Without it, use a bibliographic entry and link to the publisher's original page. A public link and credit do not themselves grant image-reuse rights.
+If image rights are unclear, do not display or hotlink the image. Contact the artist or rights holder for permission, or select a work with a license that clearly permits this use. Record the permission or license in the candidate before publication.
 
 ## Project details
 
-- Supabase project URL: `https://huyogawqcaheatwvfrgc.supabase.co`
-- Hosted archive: `https://aditics99.github.io/explain-that-political-cartoon/`
-- Hosted archive desk: `https://aditics99.github.io/explain-that-political-cartoon/editorial.html`
-- Database migration: [`supabase/archive_migration.sql`](supabase/archive_migration.sql)
+- Hosted site: `https://aditics99.github.io/explain-that-political-cartoon/`
+- Editorial desk: `https://aditics99.github.io/explain-that-political-cartoon/editorial.html`
+- Supabase project: `https://huyogawqcaheatwvfrgc.supabase.co`

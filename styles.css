@@ -37,3 +37,36 @@
 .permission-check{display:flex!important;align-items:flex-start;gap:9px;font-weight:600!important;line-height:1.45}.permission-check input{width:auto!important;margin:0}
 @media(max-width:700px){.archive-shell{grid-template-columns:68px minmax(0,1fr)}.year-rail{padding:18px 8px 18px 14px;gap:24px}.archive-mark{font-size:11px}.year-link{font-size:15px}.year-link:hover,.year-link:focus-visible,.year-link.selected{transform:scale(1.18)}.archive-welcome{width:auto;margin:0 8%}.archive-welcome h1{font-size:clamp(43px,12vw,70px)}.year-heading{top:20px;left:22px}.archive-carousel{padding:12vh 0 7vh}.archive-carousel .carousel-track{gap:16px;padding:0 10vw}.archive-carousel .tile{flex-basis:76vw;height:64vh;opacity:.45;transform:scale(.91)}.archive-carousel .tile.is-centered{opacity:1;transform:scale(1)}.archive-carousel .tile:hover,.archive-carousel .tile.is-centered:hover{transform:scale(1)}.archive-carousel .carousel-arrow{opacity:.9}.candidate-placeholder{width:100%;min-height:150px}}
 @media(prefers-reduced-motion:reduce){.year-link,.archive-carousel .tile{transition:none}}
+
+/* Weekly issue: restrained, image-led layout with generous portfolio-like space. */
+.weekly-page{min-height:100vh;padding:26px clamp(20px,5vw,76px) 22px;display:flex;flex-direction:column;overflow:hidden;background:#f6f3ee}
+.weekly-masthead{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;border-bottom:1px solid #d9d4ca;padding:0 0 16px}
+.weekly-brand{display:flex;align-items:baseline;gap:8px;color:var(--ink);font:700 16px var(--display);letter-spacing:-.8px;text-decoration:none}
+.weekly-brand span{font:500 10px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.weekly-issue{display:flex;gap:16px;margin:3px 0 0;font:700 9px var(--sans);letter-spacing:1.25px;color:#817b70}
+.weekly-issue span{font-weight:500;letter-spacing:.2px}
+.weekly-intro{position:relative;width:min(800px,86%);margin:clamp(35px,7vh,78px) auto 12px}
+.weekly-intro .eyebrow{font-size:9px;letter-spacing:1.4px;margin-bottom:16px}
+.weekly-intro h1{font:500 clamp(48px,8vw,104px)/.91 var(--display);letter-spacing:-.085em;margin:0}
+.weekly-intro h1 em{font:italic 400 1em var(--serif);letter-spacing:-.075em}
+.weekly-deck{max-width:390px;margin:21px 0 0;font:400 clamp(15px,1.35vw,18px)/1.55 var(--serif);color:#625e57}
+.weekly-carousel{width:100%;padding:3vh 0 1.5vh;min-height:36vh;display:flex;align-items:center}
+.weekly-carousel .carousel-track{width:100%;gap:3.8vw;padding:0 calc((100% - clamp(260px,39vw,500px))/2)}
+.weekly-carousel .weekly-tile{flex:0 0 clamp(260px,39vw,500px);height:min(48vh,560px);aspect-ratio:auto;border:6px solid #c6a14a;border-radius:1px;background:#c6a14a;opacity:.36;transform:scale(.84);transition:opacity .4s ease,transform .4s ease;scroll-snap-align:center;overflow:hidden;box-shadow:0 14px 34px rgba(33,27,13,.09)}
+.weekly-carousel .weekly-tile.is-centered{opacity:1;transform:scale(1)}
+.weekly-carousel .weekly-tile img{display:block;width:100%;height:100%;object-fit:contain;background:#f6f3ee}
+.weekly-carousel .weekly-tile:hover{transform:scale(.87)}.weekly-carousel .weekly-tile.is-centered:hover{transform:scale(1)}
+.weekly-credits{display:flex;justify-content:center;flex-wrap:wrap;gap:8px 24px;color:#777168;font:500 10px var(--sans);letter-spacing:.1px;text-align:center;padding:8px 0 18px}
+.weekly-empty{width:min(470px,80%);margin:clamp(34px,7vh,75px) auto auto;padding:0 0 40px}
+.weekly-empty .empty-mark{display:inline-block;color:#c6a14a;font-size:30px;margin-bottom:19px}
+.weekly-empty .eyebrow{margin-bottom:9px}
+.weekly-empty h2{font:500 clamp(25px,3.2vw,38px)/1.05 var(--display);letter-spacing:-1.5px;margin:0 0 14px}
+.weekly-empty>p:last-child{max-width:410px;font:400 15px/1.65 var(--serif);color:#69655e;margin:0}
+.weekly-footer{display:flex;justify-content:space-between;gap:16px;margin-top:auto;border-top:1px solid #d9d4ca;padding:14px 0 0;color:#8a857c;font:500 9px var(--sans);letter-spacing:.2px}
+@media(max-width:700px){.weekly-page{padding:20px 16px 16px}.weekly-masthead{align-items:flex-start}.weekly-brand{font-size:14px}.weekly-issue{font-size:8px;gap:8px;flex-direction:column;text-align:right}.weekly-intro{width:94%;margin:55px auto 18px}.weekly-intro h1{font-size:clamp(44px,12vw,72px)}.weekly-carousel{min-height:34vh;padding:2vh 0}.weekly-carousel .carousel-track{gap:14px;padding:0 12vw}.weekly-carousel .weekly-tile{flex-basis:76vw;height:42vh;opacity:.42;transform:scale(.92)}.weekly-carousel .weekly-tile.is-centered{opacity:1;transform:scale(1)}.weekly-carousel .weekly-tile:hover,.weekly-carousel .weekly-tile.is-centered:hover{transform:scale(1)}.weekly-carousel .carousel-arrow{opacity:.9}.weekly-credits{font-size:9px;gap:8px 14px}.weekly-empty{width:88%;margin:55px auto auto}.weekly-empty>p:last-child{font-size:14px}.weekly-footer{font-size:8px}}
+@media(prefers-reduced-motion:reduce){.weekly-carousel .weekly-tile{transition:none}}
+.weekly-carousel .weekly-tile{height:auto;display:flex;flex-direction:column;gap:10px;border:0;border-radius:0;background:transparent;box-shadow:none;overflow:visible}
+.weekly-carousel .weekly-image-frame{height:min(44vh,520px);border:6px solid #c6a14a;background:#c6a14a;box-shadow:0 14px 34px rgba(33,27,13,.09);overflow:hidden}
+.weekly-carousel .weekly-tile img{height:100%;width:100%;object-fit:contain;background:#f6f3ee}
+.weekly-credit{margin:0;padding:0 4px;color:#6f6a61;font:500 10px/1.4 var(--sans);letter-spacing:.1px}
+@media(max-width:700px){.weekly-carousel .weekly-image-frame{height:38vh}.weekly-credit{font-size:9px}}
