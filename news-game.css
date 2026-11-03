@@ -11,6 +11,7 @@
   font-family: "DM Sans", sans-serif;
   font-synthesis: none;
 }
+
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--paper); color: var(--ink); }
 button { color: inherit; font: inherit; }
@@ -28,15 +29,13 @@ h1 { max-width: 570px; margin: 0; font-family: "DM Serif Display", Georgia, seri
 .demo-pill { padding: 5px 8px; border: 1px solid var(--line); border-radius: 99px; font-size: 10px; letter-spacing: .04em; text-transform: uppercase; }
 .story { margin-top: 18px; padding: 25px 0 24px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); font-family: "DM Serif Display", Georgia, serif; font-size: clamp(21px, 4vw, 25px); line-height: 1.65; }
 .story p { margin: 0; }
-.blank { min-width: 104px; min-height: 36px; margin: 0 3px; padding: 3px 10px 5px; border: 0; border-bottom: 1px solid #c9c3b9; border-radius: 0; background: transparent; color: var(--accent); cursor: pointer; font-family: "DM Sans", sans-serif; font-size: 15px; font-weight: 600; vertical-align: baseline; transition: border-color .18s, background .18s; }
-.blank:hover, .blank:focus-visible { border-color: var(--accent); background: #f2eff8; outline: 0; }
-.blank.is-correct { border-color: var(--good); color: var(--good); }
-.blank.is-wrong { border-color: var(--bad); color: var(--bad); }
-.blank-menu { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; }
-.blank-menu[hidden] { display: none; }
-.choice { padding: 9px 13px; border: 1px solid var(--line); border-radius: 5px; background: transparent; cursor: pointer; font-size: 13px; transition: border-color .18s, background .18s; }
-.choice:hover, .choice:focus-visible { border-color: #aaa29a; background: #fff; outline: 0; }
-.prompt { margin: 12px 0 0; color: var(--muted); font-size: 12px; }
+.select-wrap { position: relative; display: inline-block; max-width: 100%; margin: 0 3px; vertical-align: baseline; }
+.select-wrap::after { position: absolute; top: 47%; right: 9px; width: 6px; height: 6px; border-right: 1px solid var(--accent); border-bottom: 1px solid var(--accent); content: ""; pointer-events: none; transform: translateY(-50%) rotate(45deg); }
+.blank-select { max-width: 100%; min-height: 36px; padding: 3px 27px 5px 9px; appearance: none; border: 0; border-bottom: 1px solid #c9c3b9; border-radius: 0; background: transparent; color: var(--accent); cursor: pointer; font-family: "DM Sans", sans-serif; font-size: 15px; font-weight: 600; vertical-align: baseline; transition: border-color .18s, background .18s; }
+.blank-select:hover, .blank-select:focus-visible { border-color: var(--accent); background: #f2eff8; outline: 0; }
+.blank-select.is-correct { border-color: var(--good); color: var(--good); }
+.blank-select.is-wrong { border-color: var(--bad); color: var(--bad); }
+.blank-select option { color: var(--ink); font: 14px "DM Sans", sans-serif; }
 .actions { display: flex; align-items: center; gap: 15px; margin-top: 21px; }
 .check-button { padding: 11px 17px; border: 1px solid var(--ink); border-radius: 5px; background: var(--ink); color: white; cursor: pointer; font-size: 13px; font-weight: 600; transition: opacity .18s, transform .18s; }
 .check-button:hover { opacity: .86; transform: translateY(-1px); }
@@ -52,5 +51,11 @@ h1 { max-width: 570px; margin: 0; font-family: "DM Serif Display", Georgia, seri
 .footer { padding: 16px 0 23px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; }
 .footer span:last-child { float: right; }
 @keyframes appear { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
-@media (max-width: 520px) { .page { width: min(100% - 32px, 790px); } .content { margin-top: 56px; } .story { padding: 20px 0; } .footer span:last-child { float: none; display: block; margin-top: 7px; } }
+@media (max-width: 520px) {
+  .page { width: min(100% - 32px, 790px); }
+  .content { margin-top: 56px; }
+  .story { padding: 20px 0; }
+  .blank-select { font-size: 14px; }
+  .footer span:last-child { float: none; display: block; margin-top: 7px; }
+}
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; } }
