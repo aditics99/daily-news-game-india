@@ -1,0 +1,56 @@
+:root {
+  color-scheme: light;
+  --paper: #fbfaf8;
+  --ink: #242321;
+  --muted: #85817b;
+  --line: #eae7e2;
+  --soft: #f2f0ec;
+  --accent: #7160a8;
+  --good: #28785a;
+  --bad: #a54a42;
+  font-family: "DM Sans", sans-serif;
+  font-synthesis: none;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--ink); }
+button { color: inherit; font: inherit; }
+a { color: inherit; }
+.page { width: min(100% - 40px, 790px); margin: 0 auto; }
+.masthead { display: flex; align-items: center; justify-content: space-between; min-height: 70px; border-bottom: 1px solid var(--line); }
+.brand { font-size: 14px; font-weight: 700; letter-spacing: -.035em; text-decoration: none; }
+.brand span { color: var(--muted); font-weight: 500; margin-left: 7px; }
+.streak { color: var(--muted); font-size: 12px; }
+.content { width: min(100%, 620px); margin: 72px auto 88px; }
+.kicker { margin: 0 0 14px; color: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; }
+h1 { max-width: 570px; margin: 0; font-family: "DM Serif Display", Georgia, serif; font-size: clamp(38px, 7vw, 58px); font-weight: 400; letter-spacing: -.035em; line-height: 1.02; }
+.intro { max-width: 480px; margin: 18px 0 0; color: #6f6b66; font-size: 15px; line-height: 1.7; }
+.story-meta { display: flex; align-items: center; gap: 10px; margin-top: 35px; color: var(--muted); font-size: 12px; }
+.demo-pill { padding: 5px 8px; border: 1px solid var(--line); border-radius: 99px; font-size: 10px; letter-spacing: .04em; text-transform: uppercase; }
+.story { margin-top: 18px; padding: 25px 0 24px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); font-family: "DM Serif Display", Georgia, serif; font-size: clamp(21px, 4vw, 25px); line-height: 1.65; }
+.story p { margin: 0; }
+.blank { min-width: 104px; min-height: 36px; margin: 0 3px; padding: 3px 10px 5px; border: 0; border-bottom: 1px solid #c9c3b9; border-radius: 0; background: transparent; color: var(--accent); cursor: pointer; font-family: "DM Sans", sans-serif; font-size: 15px; font-weight: 600; vertical-align: baseline; transition: border-color .18s, background .18s; }
+.blank:hover, .blank:focus-visible { border-color: var(--accent); background: #f2eff8; outline: 0; }
+.blank.is-correct { border-color: var(--good); color: var(--good); }
+.blank.is-wrong { border-color: var(--bad); color: var(--bad); }
+.blank-menu { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; }
+.blank-menu[hidden] { display: none; }
+.choice { padding: 9px 13px; border: 1px solid var(--line); border-radius: 5px; background: transparent; cursor: pointer; font-size: 13px; transition: border-color .18s, background .18s; }
+.choice:hover, .choice:focus-visible { border-color: #aaa29a; background: #fff; outline: 0; }
+.prompt { margin: 12px 0 0; color: var(--muted); font-size: 12px; }
+.actions { display: flex; align-items: center; gap: 15px; margin-top: 21px; }
+.check-button { padding: 11px 17px; border: 1px solid var(--ink); border-radius: 5px; background: var(--ink); color: white; cursor: pointer; font-size: 13px; font-weight: 600; transition: opacity .18s, transform .18s; }
+.check-button:hover { opacity: .86; transform: translateY(-1px); }
+.check-button:disabled { cursor: default; opacity: .42; transform: none; }
+.reset-button { padding: 9px 0; border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 12px; }
+.result { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); animation: appear .25s ease both; }
+.result[hidden] { display: none; }
+.result-title { margin: 0 0 8px; font-size: 14px; font-weight: 700; }
+.result-copy { margin: 0; color: #625e59; font-size: 14px; line-height: 1.75; }
+.sources { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 20px; }
+.sources a { color: var(--muted); font-size: 12px; text-decoration-color: #d4d0ca; text-underline-offset: 3px; }
+.sources a:hover { color: var(--ink); }
+.footer { padding: 16px 0 23px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; }
+.footer span:last-child { float: right; }
+@keyframes appear { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+@media (max-width: 520px) { .page { width: min(100% - 32px, 790px); } .content { margin-top: 56px; } .story { padding: 20px 0; } .footer span:last-child { float: none; display: block; margin-top: 7px; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; } }
