@@ -4,10 +4,10 @@ const story = {
   intro: "Fill in the parts that make the story click. No dates or money figures to memorise.",
   sentences: [
     "It looked like one betting business, but the ED says Mahadev Online Book worked through a split operation.",
-    "Its promoters ran it from ",
+    " Its promoters ran it from ",
     " while ",
     " signed up customers and handled bets in India.",
-    "That left the people controlling the software and accounts at the top, while local teams did the work on the ground."
+    " That left the people controlling the software and accounts at the top, while local teams did the work on the ground."
   ],
   blanks: [
     { id: "place", label: "Where were the promoters based?", answer: "Dubai", options: ["Dubai", "Doha", "Singapore"] },
@@ -25,7 +25,6 @@ const savedKey = "explain-that-news-game-v1";
 let answers = {};
 let openBlank = null;
 let checked = false;
-
 function escapeHTML(value) {
   return String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 }
