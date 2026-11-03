@@ -45,6 +45,19 @@ h1 { max-width: 570px; margin: 0; font-family: "DM Serif Display", Georgia, seri
 .result[hidden] { display: none; }
 .result-title { margin: 0 0 8px; font-size: 14px; font-weight: 700; }
 .result-copy { margin: 0; color: #625e59; font-size: 14px; line-height: 1.75; }
+.fuel-visual { margin-top: 20px; padding: 18px 20px 15px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: #514a69; }
+.fuel-visual-title { margin: 0 0 14px; color: var(--ink); font-size: 13px; font-weight: 700; }
+.blend-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.blend-chip { display: flex; min-height: 51px; flex-direction: column; justify-content: center; gap: 2px; padding: 7px 10px; border: 1px solid #e8e4ef; border-radius: 5px; background: #f8f6fb; }
+.blend-chip strong { color: var(--accent); font-size: 13px; }
+.blend-chip small { color: var(--muted); font-size: 10px; }
+.fuel-path { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 5px 0 0; color: #aaa2ba; }
+.fuel-path span { width: 1px; height: 17px; background: #d9d4e1; }
+.fuel-path b { padding: 4px 10px; border: 1px solid #e8e4ef; border-radius: 99px; background: white; color: var(--accent); font-size: 10px; font-weight: 600; }
+.car-row { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 5px; color: var(--accent); }
+.car-row svg { width: 150px; height: 52px; }
+.car-row span { color: var(--ink); font-size: 11px; font-weight: 600; }
+.fuel-visual-note { margin: 7px 0 0; color: var(--muted); font-size: 11px; line-height: 1.55; text-align: center; }
 .sources { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 20px; }
 .sources a { color: var(--muted); font-size: 12px; text-decoration-color: #d4d0ca; text-underline-offset: 3px; }
 .sources a:hover { color: var(--ink); }
@@ -56,6 +69,11 @@ h1 { max-width: 570px; margin: 0; font-family: "DM Serif Display", Georgia, seri
   .content { margin-top: 56px; }
   .story { padding: 20px 0; }
   .blank-select { font-size: 14px; }
+  .fuel-visual { padding: 16px 13px 13px; }
+  .blend-row { gap: 5px; }
+  .blend-chip { padding: 7px; }
+  .car-row { gap: 6px; }
+  .car-row svg { width: 125px; }
   .footer span:last-child { float: none; display: block; margin-top: 7px; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; } }
