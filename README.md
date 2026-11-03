@@ -1,17 +1,18 @@
 # Explain That
 
-A weekly, image-led selection of Indian political cartoons. Each cartoon opens a short explainer written in our own words: a hook, the real political event behind the image, and a simple account of what the cartoonist is arguing. Factual claims link to sources below the explanation.
+A small daily news game for learning Indian news through short, natural fill-in-the-blank stories. The visual direction takes cues from [Preet Suthar](https://preetsuthar.me/): a narrow reading column, quiet dividers, restrained color, and very little interface chrome.
 
-## Run locally
+## Open the MVP
 
-Open `index.html` in a modern browser, or serve this folder with any static web server. Open `editorial.html` separately for the private editorial desk. See [SUPABASE_SETUP.md](SUPABASE_SETUP.md) for the editor sign-in and database setup.
+Open `index.html` in a browser or publish the repository with GitHub Pages. There are no build steps, API keys, or server requirements for this static preview.
 
-## Weekly issue rules
+The current story is marked as a **demo, not live news**. It uses a sourced example about the Mahadev Online Book investigation. Live news discovery and editorial review are not connected yet; don't present the demo as today's news.
 
-The public page shows approved cartoons dated in the current Monday-to-Sunday week. Cartoons appear as images only when display rights are verified. Candidate work stays private until reviewed and approved. Do not reuse artwork or explanatory copy from POLITICO’s gallery; it is a format reference only. The visual direction remains Justine Soulié’s portfolio, with Explain That’s existing gold frame and closable explainer.
+## Files
 
-Write each explainer from the historical and political facts, in simple language. Start with a hook, name the real event and why it matters, explain the cartoonist’s point, and distinguish that opinion from confirmed facts. Add reliable sources for factual claims. Credit the artist and publication. Do not use an image merely because it is publicly viewable or credited.
+- `index.html` is the public entry page.
+- `news-game.css` contains the responsive, text-first design.
+- `news-game.js` contains the demo story and fill-in interaction.
+- `editorial.html` is the earlier private cartoon archive desk, retained while the product direction changes.
 
-## Hosting
-
-GitHub Pages publishes the public site and separate auth-gated editorial desk. The Supabase publishable key in browser code is intended for public use; row-level security protects editorial data.
+The game reveals the short explanation and source after the reader checks their answers. Correct completion is remembered in the current browser only.
