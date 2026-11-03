@@ -16,3 +16,10 @@ The current story is marked as a **demo, not live news**. It uses a sourced exam
 - `editorial.html` is the earlier private cartoon archive desk, retained while the product direction changes.
 
 The game reveals the short explanation and source after the reader checks their answers. Correct completion is remembered in the current browser only.
+
+## Editorial guardrails
+
+- Do not turn deaths, injuries, or casualty counts into blanks, scores, or trivia.
+- Avoid stories centered on disasters, mass-casualty events, or active violence.
+- If a tragedy is essential context for another story, mention it briefly and sensitively; never ask readers to guess its human toll.
+- Keep the game focused on understanding decisions, policies, institutions, and context—not memorizing distressing numbers.
