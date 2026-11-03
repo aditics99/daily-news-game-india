@@ -45,7 +45,15 @@ function render() {
     '<div class="actions"><button class="check-button" type="button" data-check ' + (complete ? '' : 'disabled') + '>' + (checked ? 'Try again' : 'Check my story') + '</button>' +
     '<button class="reset-button" type="button" data-reset>Start over</button></div>' +
     '<section class="result" aria-live="polite" ' + (checked ? '' : 'hidden') + '><p class="result-title">' + (correctlyAnswered ? 'You got the story.' : 'Here’s how the story fits together.') + '</p>' +
-    '<p class="result-copy">' + escapeHTML(story.explanation) + '</p><div class="sources"><a href="' + escapeHTML(story.source.url) + '" target="_blank" rel="noopener noreferrer">' + escapeHTML(story.source.label) + ' ↗</a></div></section></section></main>' +
+    '<p class="result-copy">' + escapeHTML(story.explanation) + '</p>' +
+    '<div class="fuel-visual" role="img" aria-label="A flex-fuel vehicle has one tank and can use different petrol and ethanol blends within the range it was designed and certified for.">' +
+      '<p class="fuel-visual-title">One tank. A range of fuel blends.</p>' +
+      '<div class="blend-row" aria-hidden="true"><span class="blend-chip"><strong>E20</strong><small>20% ethanol</small></span><span class="blend-chip"><strong>E85</strong><small>up to 85%</small></span><span class="blend-chip"><strong>E100</strong><small>mostly ethanol</small></span></div>' +
+      '<div class="fuel-path" aria-hidden="true"><span></span><b>one tank</b><span></span></div>' +
+      '<div class="car-row" aria-hidden="true"><svg viewBox="0 0 220 74" focusable="false"><path d="M35 46h-8a7 7 0 0 1-7-7v-8a8 8 0 0 1 6-8l22-6 18-16a12 12 0 0 1 9-4h55a15 15 0 0 1 11 5l17 19 29 7a9 9 0 0 1 7 9v9h-9" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M35 46h117M63 17h76M76 4l-9 13m65-13 8 13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><circle cx="52" cy="48" r="12" fill="var(--paper)" stroke="currentColor" stroke-width="3"/><circle cx="165" cy="48" r="12" fill="var(--paper)" stroke="currentColor" stroke-width="3"/><circle cx="52" cy="48" r="4" fill="currentColor"/><circle cx="165" cy="48" r="4" fill="currentColor"/></svg><span>flex-fuel vehicle</span></div>' +
+      '<p class="fuel-visual-note">Each model is certified for its own fuel range. The engine adjusts to the blend.</p>' +
+    '</div>' +
+    '<div class="sources"><a href="' + escapeHTML(story.source.url) + '" target="_blank" rel="noopener noreferrer">' + escapeHTML(story.source.label) + ' ↗</a></div></section></section></main>' +
     '<footer class="footer"><span>Explain That</span><span>One story at a time.</span></footer></div>';
 
   app.querySelectorAll("[data-blank]").forEach((select) => {
