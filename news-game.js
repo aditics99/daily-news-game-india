@@ -1,19 +1,19 @@
 const story = {
   kicker: "One quick game. One real story.",
   sentences: [
-    "The government updated the Central Motor Vehicles Rules, 2026, to include E100 in the emission standards for flex-fuel vehicles—vehicles that can run on different petrol-and-ethanol blends.",
-    " But this doesn’t make every petrol car E100-ready. To use E100, a vehicle must be ",
-    ". E20 is petrol with 20% ethanol; E100 is fuel made mostly from ethanol."
+    "The new rules add E100, fuel made mostly from ethanol, to emission standards for flex-fuel vehicles—vehicles designed to run on different petrol-and-ethanol blends.",
+    " That doesn’t mean every petrol car can use it. To run E100, a vehicle must be ",
+    ". E100 is fuel made mostly from ethanol."
   ],
   blanks: [
     {
       id: "qualification",
-      label: "What must a vehicle be approved for before using E100?",
-      answer: "designed and certified for high-ethanol fuel",
-      options: ["designed and certified for high-ethanol fuel", "able to run on E20", "made after 2026"]
+      label: "Which vehicle can use E100?",
+      answer: "designed and certified for E100",
+      options: ["designed and certified for E100", "uses regular petrol", "was made after 2026"]
     }
   ],
-  explanation: "The rules now name E100 in the emission-certification standards for flex-fuel vehicles. A vehicle must be designed and certified for high-ethanol fuel to use it. Being able to run on E20 alone isn’t enough.",
+  explanation: "The new rule lets flex-fuel vehicles use E100 when they are designed and certified for it. It doesn’t make regular petrol cars E100-ready.",
   source: {
     label: "MoRTH via PIB · E100 and flex-fuel rules",
     url: "https://www.pib.gov.in/PressReleaseIframePage.aspx?PRID=2328642&lang=2&reg=48"
@@ -47,7 +47,7 @@ function render() {
   app.innerHTML = '<div class="page">' +
     '<header class="masthead"><a class="brand" href="./">Explain That<span>· India</span></a><span class="streak">' + escapeHTML(progressLabel()) + '</span></header>' +
     '<main class="content"><p class="kicker">' + escapeHTML(story.kicker) + '</p><h1>Daily news for the dopamine-fried brain.</h1>' +
-    '<p class="intro">Make a guess. Then get the story behind the news.</p>' +
+    '<p class="intro">Play a game. Guess the daily news. Then find out what happened.</p>' +
     '<div class="story-meta"><span class="demo-pill">Demo story · not live news</span><span>India</span></div>' +
     '<section aria-label="Fill in the story"><div class="story"><p>' + storyBody + '</p></div>' +
     '<div class="actions"><button class="check-button" type="button" data-check ' + (complete ? '' : 'disabled') + '>' + (checked ? 'Try again' : 'Check my story') + '</button>' +
