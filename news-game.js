@@ -3,7 +3,7 @@ const story = {
   sentences: [
     "The new rules add E100, fuel made mostly from ethanol, to emission standards for flex-fuel vehicles—vehicles designed to run on different petrol-and-ethanol blends.",
     " That doesn’t mean every petrol car can use it. To run E100, a vehicle must be ",
-    ". E100 is fuel made mostly from ethanol."
+    "."
   ],
   blanks: [
     {
