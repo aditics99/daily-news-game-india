@@ -79,7 +79,7 @@ function render() {
     }
     render();
   });
-  app.querySelector("[data-reset]").addEventListener("click", () => { answers = {}; checked = false; render(); });
+  app.querySelector("[data-reset]").addEventListener("click", () => { answers = {}; checked = false; try { localStorage.removeItem(savedKey); } catch { /* progress is optional */ } render(); });
 }
 
 function blankSelect(blank) {
