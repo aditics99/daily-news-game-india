@@ -1,10 +1,10 @@
-# Supabase setup for the weekly cartoon desk
+# Supabase setup for the private editorial desk
 
 The Supabase project is `explain-that`. The editorial desk uses email sign-in and an editor allowlist. The public page reads approved cartoons only.
 
 ## Sign in as the editor
 
-1. Open the separate [editorial desk](https://aditics99.github.io/explain-that-political-cartoon/editorial.html).
+1. Open the separate [editorial desk](https://aditics99.github.io/daily-news-game-india/editorial.html).
 2. Enter your email address and use the secure link Supabase sends you.
 3. Add your account to `public.editorial_admins` using the SQL statement shown by the desk.
 4. Refresh the desk to review and publish cartoons.
@@ -25,6 +25,6 @@ If image rights are unclear, do not display or hotlink the image. Contact the ar
 
 ## Project details
 
-- Hosted site: `https://aditics99.github.io/explain-that-political-cartoon/`
-- Editorial desk: `https://aditics99.github.io/explain-that-political-cartoon/editorial.html`
+- Hosted site: `https://aditics99.github.io/daily-news-game-india/`
+- Editorial desk: `https://aditics99.github.io/daily-news-game-india/editorial.html`
 - Supabase project: `https://huyogawqcaheatwvfrgc.supabase.co`
