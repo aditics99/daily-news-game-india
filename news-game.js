@@ -32,7 +32,7 @@ const edition = {
       after: ".",
       answer: "start mining",
       options: ["start mining", "sell electricity", "build a railway"],
-      explanation: "A mineral block is a mapped area of land that may contain useful minerals. Think of an exploration licence as permission to check what is underground. A company needs separate permission to start mining. This auction includes 20 mining blocks and 11 exploration licences.",
+      explanation: "A mineral block is a mapped area of land that may contain useful minerals. Think of an exploration licence as permission to check what is underground. A company needs separate permission to start mining. This round offers 20 critical-mineral blocks and 11 exploration-licence blocks.",
       source: { label: "Ministry of Mines · mineral auctions", url: "https://www.pib.gov.in/PressReleseDetailm.aspx?PRID=2333123&lang=2&reg=48" }
     },
     {
