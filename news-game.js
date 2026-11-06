@@ -14,11 +14,11 @@ const edition = {
     {
       section: "India & its neighbours",
       headline: "India offers Nepal help after Bhotekoshi floods",
-      before: "During talks in Kathmandu, India’s Foreign Secretary,",
+      before: "During talks in Kathmandu, India’s Foreign Secretary, ",
       after: ", said India was ready to help Nepal repair infrastructure damaged by the Bhotekoshi floods. The two sides also discussed electricity trade. Nepal PM Balen Shah is expected to visit India from November 22.",
       answer: "Vikram Misri",
       options: ["Vikram Misri", "Amrit Bahadur Rai", "Shisir Khanal"],
-      explanation: "Vikram Misri is a senior official who handles India’s relations with other countries. In 2024, India and Nepal agreed to work towards Nepal selling up to 10,000 MW of power to India over ten years. MW measures power supply; the agreement sets a long-term target, not a one-time delivery. If a flood damages a road or bridge, repairing it can help nearby people and goods move again.",
+      explanation: "Vikram Misri is a senior official who works on India’s relations with other countries. In 2024, India and Nepal agreed to work towards Nepal exporting up to 10,000 MW of electricity to India over ten years. MW measures how much power can be supplied at a time; this is a long-term target, not electricity arriving all at once. Repairing a damaged road, for example, can help local people travel and move goods.",
       sources: [
         { label: "The Kathmandu Post · flood-repair offer", url: "https://kathmandupost.com/national/2026/11/04/vikram-misri-says-india-ready-to-help-nepal-s-flood-hit-infrastructure" },
         { label: "PIB · India–Nepal power agreement", url: "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2099131&lang=2&reg=3" },
