@@ -27,13 +27,17 @@ const edition = {
     },
     {
       section: "Money & resources",
-      headline: "India opens auctions for mineral exploration and mining",
-      before: "The government is inviting companies to bid for mapped areas that may contain minerals used in electric vehicles, electronics and clean-energy equipment. An exploration licence lets a company search for minerals; it does not let the company",
-      after: ".",
-      answer: "start mining",
-      options: ["start mining", "sell electricity", "build a railway"],
-      explanation: "A mineral block is a mapped area of land that may contain useful minerals. Think of an exploration licence as permission to check what is underground. A company needs separate permission to start mining. This auction includes 20 mining blocks and 11 exploration licences.",
-      source: { label: "Ministry of Mines · mineral auctions", url: "https://www.pib.gov.in/PressReleseDetailm.aspx?PRID=2333123&lang=2&reg=48" }
+      headline: "India opens a new round of critical-mineral auctions",
+      before: "The Ministry of Mines has opened its",
+      after: " of e-auctions for 20 critical and strategic mineral blocks across eight states. Chhattisgarh has five blocks, including Gohirapali, a glauconite block; Rajasthan has three, including tungsten. The Ministry has also opened a third round of 11 exploration licences.",
+      answer: "Ninth Tranche",
+      options: ["Ninth Tranche", "Eighth Tranche", "Third Tranche"],
+      explanation: "An e-auction is an online bidding process. A mineral block is a mapped area that may contain minerals; companies bid for the right to explore or mine it. The 11 exploration licences are different: they let a company search for minerals, but do not let it start mining. For example, a company might test rock samples to see what is in the ground before a mine is opened.",
+      sources: [
+        { label: "Ministry of Mines · Ninth Tranche announcement", url: "https://www.pib.gov.in/PressReleseDetailm.aspx?PRID=2333123&lang=2&reg=48" },
+        { label: "The Hindu · 20-block auction", url: "https://www.thehindu.com/business/Economy/ninth-tranche-of-mineral-block-auctions-offers-20-blocks/article71671174.ece" },
+        { label: "GSI · Gohirapali glauconite block", url: "https://mines.gov.in/webportal/content/gtwogthreereport" }
+      ]
     },
     {
       section: "How Parliament works",
