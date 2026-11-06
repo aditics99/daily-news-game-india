@@ -41,13 +41,13 @@ const edition = {
     },
     {
       section: "How Parliament works",
-      headline: "Hardeep Singh Puri wins a Rajya Sabha seat without a public vote",
-      before: "Rajya Sabha members representing a state are elected by that state’s elected Assembly members, called",
-      after: ". Hardeep Singh Puri was declared elected from Madhya Pradesh after two other candidates’ nominations were rejected, leaving him as the only candidate.",
-      answer: "MLAs",
-      options: ["MLAs", "all adult voters", "members of the Lok Sabha"],
-      explanation: "MLA means Member of the Legislative Assembly. Unlike a Lok Sabha election, people do not vote directly for a state’s Rajya Sabha members; their elected MLAs choose. Puri was the only candidate left, so no polling was needed.",
-      source: { label: "The Indian Express · Rajya Sabha election", url: "https://indianexpress.com/article/india/hardeep-singh-puri-elected-unopposed-rajya-sabha-madhya-pradesh-10952368/" }
+      headline: "BJP minister Hardeep Singh Puri elected unopposed from Madhya Pradesh",
+      before: "Hardeep Singh Puri, a BJP leader and Union Petroleum Minister, was elected to the Rajya Sabha from Madhya Pradesh",
+      after: " after two rival nominations were rejected, leaving him as the only candidate. State MLAs elect Rajya Sabha members; voters do not vote for them directly.",
+      answer: "unopposed",
+      options: ["unopposed", "in a public vote", "by the Lok Sabha"],
+      explanation: "‘Unopposed’ means no vote was needed because the other nominations were rejected, leaving Puri as the only candidate. He is from the BJP and is India’s Petroleum Minister. He previously led the Housing and Urban Affairs Ministry, which runs PM SVANidhi, a national loan scheme for street vendors. For example, a vendor can use a small working-capital loan to buy stock for a cart. This is a nationwide scheme, not a Madhya Pradesh-specific project.",
+      sources: [{ label: "The Indian Express · Rajya Sabha election", url: "https://indianexpress.com/article/india/hardeep-singh-puri-elected-unopposed-rajya-sabha-madhya-pradesh-10952368/" }, { label: "PIB · PM SVANidhi and street-vendor loans", url: "https://www.pib.gov.in/Pressreleaseshare.aspx?PRID=2006580&lang=2&reg=48" }]
     },
     {
       section: "Everyday India",
