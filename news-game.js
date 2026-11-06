@@ -18,7 +18,7 @@ const edition = {
       after: ", said India was ready to help Nepal repair infrastructure damaged by the Bhotekoshi floods. The two sides also discussed electricity trade. Nepal PM Balen Shah is expected to visit India from November 22.",
       answer: "Vikram Misri",
       options: ["Vikram Misri", "Amrit Bahadur Rai", "Shisir Khanal"],
-      explanation: "Vikram Misri is a senior official who works on India’s relations with other countries. In 2024, India and Nepal agreed to work towards Nepal exporting up to 10,000 MW of electricity to India over ten years. MW measures how much power can be supplied at a time; this is a long-term target, not electricity arriving all at once. Repairing a damaged road, for example, can help local people travel and move goods.",
+      explanation: "Vikram Misri is India’s Foreign Secretary, the senior civil servant handling foreign relations. In 2024, India and Nepal agreed to work towards Nepal exporting up to 10,000 MW of electricity to India over ten years. MW measures how much power can be supplied at a time; this is a long-term target, not electricity arriving all at once. Repairing a damaged road, for example, can help local people travel and move goods. In 2024, India and Nepal agreed to work towards Nepal exporting up to 10,000 MW of electricity to India over ten years. MW measures how much power can be supplied at a time; this is a long-term target, not electricity arriving all at once. Repairing a damaged road, for example, can help local people travel and move goods.",
       sources: [
         { label: "The Kathmandu Post · flood-repair offer", url: "https://kathmandupost.com/national/2026/11/04/vikram-misri-says-india-ready-to-help-nepal-s-flood-hit-infrastructure" },
         { label: "PIB · India–Nepal power agreement", url: "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2099131&lang=2&reg=3" },
@@ -46,7 +46,7 @@ const edition = {
       after: " after two rival nominations were rejected, leaving him as the only candidate. State MLAs elect Rajya Sabha members; voters do not vote for them directly.",
       answer: "unopposed",
       options: ["unopposed", "in a public vote", "by the Lok Sabha"],
-      explanation: "‘Unopposed’ means no vote was needed because the other nominations were rejected, leaving Puri as the only candidate. He is from the BJP and is India’s Petroleum Minister. He previously led the Housing and Urban Affairs Ministry, which runs PM SVANidhi, a national loan scheme for street vendors. For example, a vendor can use a small working-capital loan to buy stock for a cart. This is a nationwide scheme, not a Madhya Pradesh-specific project.",
+      explanation: "‘Unopposed’ means no vote was needed: rival nominations were rejected, leaving Puri as the only candidate. He is a BJP leader and India’s Petroleum Minister. He previously led the Housing and Urban Affairs Ministry. One nationwide initiative from that ministry, PM SVANidhi, gives street vendors small loans to buy stock for their stalls. It is not specific to Madhya Pradesh.",
       sources: [{ label: "The Indian Express · Rajya Sabha election", url: "https://indianexpress.com/article/india/hardeep-singh-puri-elected-unopposed-rajya-sabha-madhya-pradesh-10952368/" }, { label: "PIB · PM SVANidhi and street-vendor loans", url: "https://www.pib.gov.in/Pressreleaseshare.aspx?PRID=2006580&lang=2&reg=48" }]
     },
     {
