@@ -13,13 +13,17 @@ const edition = {
     },
     {
       section: "India & its neighbours",
-      headline: "India offers help to Nepal after floods",
-      before: "During talks in Kathmandu, India said it was ready to help Nepal repair infrastructure damaged by",
-      after: ". The two sides also discussed energy ties.",
-      answer: "floods",
-      options: ["floods", "a power shortage", "an earthquake"],
-      explanation: "The offer came as India and Nepal discussed cooperation ahead of Nepal’s prime minister’s expected visit to India. Roads and other infrastructure matter for trade and daily travel between the neighbours.",
-      source: { label: "The Economic Times · India–Nepal talks", url: "https://economictimes.indiatimes.com/news/india/india-ready-to-help-nepal-rebuild-flood-hit-infra-deepen-energy-ties/articleshow/135584667.cms?from=mdr" }
+      headline: "India offers help after Nepal’s Bhotekoshi floods",
+      before: "During talks in Kathmandu, India’s Foreign Secretary,",
+      after: ", said India was ready to help Nepal repair infrastructure damaged by the Bhotekoshi floods. The two countries also discussed a 2024 power agreement: India could import up to 10,000 MW of electricity from Nepal over ten years. Nepal’s prime minister, Balen Shah, is expected to visit India from November 22.",
+      answer: "Vikram Misri",
+      options: ["Vikram Misri", "Amrit Bahadur Rai", "Shisir Khanal"],
+      explanation: "Vikram Misri is India’s foreign secretary. The Bhotekoshi floods damaged infrastructure in Nepal, and India offered help with repairs. For example, repairing a damaged road can help nearby communities travel and move goods again. The power deal is a ten-year goal, not 10,000 MW arriving all at once.",
+      sources: [
+        { label: "The Kathmandu Post · flood-repair offer", url: "https://kathmandupost.com/national/2026/11/04/vikram-misri-says-india-ready-to-help-nepal-s-flood-hit-infrastructure" },
+        { label: "PIB · India–Nepal power agreement", url: "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2099131&lang=2&reg=3" },
+        { label: "The Indian Express · Balen Shah’s India visit", url: "https://indianexpress.com/article/india/nepal-pm-balendra-shah-india-november-22-visit-10952770/" }
+      ]
     },
     {
       section: "Money & resources",
@@ -134,7 +138,7 @@ function render() {
               <div class="feedback ${correct ? "is-right" : "is-not-right"}" aria-live="polite">
                 <p class="feedback-title">${correct ? "You got it." : "Here’s the missing piece."}</p>
                 <p>${escapeHTML(current.explanation)}</p>
-                <a class="source-link" href="${escapeHTML(current.source.url)}" target="_blank" rel="noopener noreferrer">${escapeHTML(current.source.label)} ↗</a>
+                ${(current.sources || [current.source]).map((source) => `<a class="source-link" href="${escapeHTML(source.url)}" target="_blank" rel="noopener noreferrer">${escapeHTML(source.label)} ↗</a>`).join("")}
               </div>
               <button class="primary-button" type="button" data-next>${state.index === edition.stories.length - 1 ? "See my score" : "Next story"}<span>→</span></button>
             ` : `<button class="primary-button" type="button" data-check ${answer ? "" : "disabled"}>Lock it in<span>→</span></button>`}
