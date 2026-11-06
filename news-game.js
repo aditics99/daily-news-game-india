@@ -27,12 +27,12 @@ const edition = {
     },
     {
       section: "Money & resources",
-      headline: "India opens a new round of critical-mineral auctions",
-      before: "The Ministry of Mines has opened its",
-      after: " of e-auctions for 20 critical and strategic mineral blocks across eight states. Chhattisgarh has five blocks, including bauxite and the Gohirapali Glauconite Block; Rajasthan has three, including tungsten. The Ministry has also opened a third round of 11 exploration licences.",
+      headline: "India puts 20 mineral blocks up for auction",
+      before: "India is looking for more minerals used in batteries, electronics and clean-energy equipment. On November 5, the Ministry of Mines opened the",
+      after: ", an online auction offering 20 critical-mineral blocks across eight states. Chhattisgarh has five, including bauxite and the Gohirapali Glauconite Block; Rajasthan has three, including tungsten. A separate round offers 11 exploration licences.",
       answer: "Ninth Tranche",
       options: ["Ninth Tranche", "Eighth Tranche", "Third Tranche"],
-      explanation: "A tranche is a round or batch. An e-auction is an online bidding process. A mineral block is a mapped area that may contain minerals; companies bid for permission to explore or mine it. The 11 exploration licences are different: they let a company search for minerals, but do not let it start mining. For example, a company might test rock samples before deciding whether the area is worth mining.",
+      explanation: "A tranche is one round of auctions. Here, companies bid online for rights to explore or mine mapped areas where these minerals may be found. The 11 exploration licences are different: they let a company search, but not start mining. Think of it like checking what is underground before deciding whether a site is worth developing.",
       sources: [
         { label: "Ministry of Mines · Ninth Tranche announcement", url: "https://www.pib.gov.in/PressReleseDetailm.aspx?PRID=2333123&lang=2&reg=48" },
         { label: "The Hindu · 20-block auction", url: "https://www.thehindu.com/business/Economy/ninth-tranche-of-mineral-block-auctions-offers-20-blocks/article71671174.ece" },
