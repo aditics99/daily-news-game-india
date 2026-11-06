@@ -5,9 +5,9 @@ const edition = {
       section: "Democracy",
       headline: "Election Commission starts voter-list updates in four states and two UTs",
       before: "The Election Commission has started updating voter lists in Arunachal Pradesh, Mizoram, Odisha, Sikkim and two Union Territories. Eligible voters can check their details and",
-      after: " before the updated lists are finalized.",
+      after: " before the updated lists are finalized. The two Union Territories include ",
       answer: "ask for corrections",
-      options: ["ask for corrections", "cast their vote early", "choose a political party"],
+      options: ["ask for corrections", "cast their vote early", "choose a political party"], before2: "", answer2: "Chandigarh", options2: ["Chandigarh", "Bhubaneswar", "Shillong"], after2: " and Dadra and Nagar Haveli and Daman and Diu.",
       explanation: "For example, if your name or other details are wrong on the list, you can ask for them to be corrected. The two Union Territories are Chandigarh and Dadra and Nagar Haveli and Daman and Diu.",
       source: { label: "Akashvani · voter-list update", url: "https://newsonair.gov.in/ec-announces-special-summary-revision-of-electoral-rolls-in-four-states-and-two-uts/" }
     },
@@ -17,7 +17,7 @@ const edition = {
       before: "During talks in Kathmandu, India’s Foreign Secretary, ",
       after: ", said India was ready to help Nepal repair infrastructure damaged by the Bhotekoshi floods. The two sides also discussed electricity trade. Nepal PM Balen Shah is expected to visit India from November 22.",
       answer: "Vikram Misri",
-      options: ["Vikram Misri", "Amrit Bahadur Rai", "Shisir Khanal"],
+      options: ["Vikram Misri", "Amrit Bahadur Rai", "Shisir Khanal"], before2: "The 2024 agreement lets Nepal export electricity to ", answer2: "India", options2: ["India", "China", "Bangladesh"], after2: ".",
       explanation: "Vikram Misri is India’s Foreign Secretary, the senior civil servant handling foreign relations. In 2024, India and Nepal agreed to work towards Nepal exporting up to 10,000 MW of electricity to India over ten years. MW measures how much power can be supplied at a time; this is a long-term target, not electricity arriving all at once. Repairing a damaged road, for example, can help local people travel and move goods.",
       sources: [
         { label: "The Kathmandu Post · flood-repair offer", url: "https://kathmandupost.com/national/2026/11/04/vikram-misri-says-india-ready-to-help-nepal-s-flood-hit-infrastructure" },
@@ -31,7 +31,7 @@ const edition = {
       before: "India is looking for more minerals used in batteries, electronics and clean-energy equipment. On November 5, the Ministry of Mines opened the",
       after: ", an online auction offering 20 critical-mineral blocks across eight states. Chhattisgarh has five, including bauxite and the Gohirapali Glauconite Block; Rajasthan has three, including tungsten. A separate round offers 11 exploration licences.",
       answer: "Ninth Tranche",
-      options: ["Ninth Tranche", "Eighth Tranche", "Third Tranche"],
+      options: ["Ninth Tranche", "Eighth Tranche", "Third Tranche"], before2: "The 11 exploration licences let companies ", answer2: "search for minerals", options2: ["search for minerals", "start mining immediately", "set mineral prices"], after2: ", but not start mining.",
       explanation: "A tranche is one round of auctions. Here, companies bid online for rights to explore or mine mapped areas where these minerals may be found. The 11 exploration licences are different: they let a company search, but not start mining. Think of it like checking what is underground before deciding whether a site is worth developing.",
       sources: [
         { label: "Ministry of Mines · Ninth Tranche announcement", url: "https://www.pib.gov.in/PressReleseDetailm.aspx?PRID=2333123&lang=2&reg=48" },
@@ -42,20 +42,20 @@ const edition = {
     {
       section: "How Parliament works",
       headline: "Hardeep Singh Puri wins a Rajya Sabha seat from Madhya Pradesh",
-      before: "Hardeep Singh Puri, a BJP leader and Union Petroleum Minister, was elected to the Rajya Sabha from Madhya Pradesh",
-      after: " after two rival nominations were rejected, leaving him as the only candidate. State MLAs elect Rajya Sabha members; voters do not vote for them directly.",
-      answer: "unopposed",
-      options: ["unopposed", "in a public vote", "by the Lok Sabha"],
+      before: "Hardeep Singh Puri, a ",
+      after: " leader and Union Petroleum Minister, was elected to the Rajya Sabha from Madhya Pradesh after two rival nominations were rejected, leaving him as the only candidate. ",
+      answer: "BJP",
+      options: ["BJP", "Congress", "CPI(M)"], before2: "State ", answer2: "MLAs", options2: ["MLAs", "MPs", "voters"], after2: " elect Rajya Sabha members; voters do not vote for them directly.",
       explanation: "‘Unopposed’ means no vote was needed: rival nominations were rejected, leaving Puri as the only candidate. He is a BJP leader and India’s Petroleum Minister. He previously led the Housing and Urban Affairs Ministry. One nationwide initiative from that ministry, PM SVANidhi, gives street vendors small loans to buy stock for their stalls. It is not specific to Madhya Pradesh.",
       sources: [{ label: "The Indian Express · Rajya Sabha election", url: "https://indianexpress.com/article/india/hardeep-singh-puri-elected-unopposed-rajya-sabha-madhya-pradesh-10952368/" }, { label: "PIB · PM SVANidhi and street-vendor loans", url: "https://www.pib.gov.in/Pressreleaseshare.aspx?PRID=2006580&lang=2&reg=48" }]
     },
     {
       section: "Everyday India",
-      headline: "New Delhi station separates routes for reserved and general-ticket passengers",
+      headline: "How New Delhi station plans to handle Diwali and Chhath crowds",
       before: "During the Diwali and Chhath rush, New Delhi railway station is sending passengers with reserved tickets and general tickets through",
       after: ". The aim is to reduce crowding at busy entry points and on platforms.",
       answer: "different gates",
-      options: ["different gates", "different trains", "separate ticket counters"],
+      options: ["different gates", "different trains", "separate ticket counters"], before2: "General tickets do not reserve ", answer2: "a seat", options2: ["a seat", "a platform", "a train"], after2: ".",
       explanation: "Reserved tickets include Sleeper and AC classes; general tickets do not reserve a seat. Separate gates and one-way routes can reduce bottlenecks, like separate queues at a busy venue. Signs will help passengers find the right gate.",
       source: { label: "The Indian Express · New Delhi station arrangements", url: "https://indianexpress.com/article/india/new-delhi-railway-station-separate-entry-exit-gates-diwali-chhath-puja-10952299/" }
     },
@@ -66,7 +66,7 @@ const app = document.querySelector("#app");
 const savedKey = "explain-that-india-daily-v1";
 const progressKey = "explain-that-india-streak-v1";
 const today = edition.date;
-const blankState = () => ({ index: 0, answers: [], revealed: false, score: 0, finished: false });
+const blankState = () => ({ index: 0, answers: [], secondAnswers: [], revealed: false, score: 0, finished: false });
 let state = loadState();
 
 function istDate(date = new Date()) {
@@ -116,10 +116,10 @@ function render() {
   const streak = getStreak();
   const current = edition.stories[Math.min(state.index, edition.stories.length - 1)];
   const done = state.finished;
-  const answer = state.answers[state.index] || "";
-  const correct = answer === current.answer;
+  const answer = state.answers[state.index] || ""; const answer2 = state.secondAnswers[state.index] || "";
+  const correct = answer === current.answer && answer2 === current.answer2;
   const progress = edition.stories.map((_, i) => `<span class="progress-dot ${i < state.index || done ? "is-done" : i === state.index ? "is-current" : ""}" aria-label="Story ${i + 1}${i < state.index || done ? ", complete" : i === state.index ? ", current" : ""}"></span>`).join("");
-  const displayStory = `${escapeHTML(current.before)}${state.revealed ? `<span class="answer-reveal ${correct ? "is-correct" : "is-wrong"}">${escapeHTML(current.answer)}</span>` : `<span class="select-wrap">${selectHTML(current, answer)}</span>`}${escapeHTML(current.after)}`;
+  const displayStory = `${escapeHTML(current.before)}${state.revealed ? `<span class="answer-reveal ${correct ? "is-correct" : "is-wrong"}">${escapeHTML(current.answer)}</span>` : `<span class="select-wrap">${selectHTML(current, answer, 1)}</span>`}${escapeHTML(current.after)}${escapeHTML(current.before2)}${state.revealed ? `<span class="answer-reveal ${correct ? "is-correct" : "is-wrong"}">${escapeHTML(current.answer2)}</span>` : `<span class="select-wrap">${selectHTML(current, answer2, 2)}</span>`}${escapeHTML(current.after2)}`;
 
   app.innerHTML = `
     <div class="page">
@@ -145,24 +145,24 @@ function render() {
                 ${(current.sources || [current.source]).map((source) => `<a class="source-link" href="${escapeHTML(source.url)}" target="_blank" rel="noopener noreferrer">${escapeHTML(source.label)} ↗</a>`).join("")}
               </div>
               <button class="primary-button" type="button" data-next>${state.index === edition.stories.length - 1 ? "See my score" : "Next story"}<span>→</span></button>
-            ` : `<button class="primary-button" type="button" data-check ${answer ? "" : "disabled"}>Lock it in<span>→</span></button>`}
+            ` : `<button class="primary-button" type="button" data-check ${answer && answer2 ? "" : "disabled"}>Lock it in<span>→</span></button>`}
           `}
         </section>
 
       </main>
-      <footer class="footer"><span>Your Daily News Game · India</span><button class="about-link" type="button" data-about>About</button></footer><dialog class="about-dialog" data-about-dialog aria-labelledby="about-title"><form method="dialog" class="about-dialog__form"><button class="about-close" aria-label="Close about">×</button></form><p class="about-kicker">WHY A NEWS GAME?</p><h2 id="about-title">Recall helps a story stick.</h2><p>When you try to remember a detail, you practise bringing it back to mind. That small act of recall can help news stay with you longer than simply scrolling past it. The explanation adds context after your guess.</p></dialog>
+      <footer class="footer"><span>Your Daily News Game · India</span><button class="about-link" type="button" data-about>About</button></footer><dialog class="about-dialog" data-about-dialog aria-labelledby="about-title"><form method="dialog" class="about-dialog__form"><button class="about-close" aria-label="Close about">×</button></form><p class="about-kicker">WHY A NEWS GAME?</p><h2 id="about-title">A little effort helps it stick.</h2><p>Trying to remember a detail is called retrieval practice. The dropdowns give you choices, so this is guided recall. Then the explanation adds context.</p></dialog>
     </div>`;
 
-  app.querySelector("[data-about]")?.addEventListener("click", () => app.querySelector("[data-about-dialog]")?.showModal()); app.querySelector("[data-answer]")?.addEventListener("change", (event) => {
-    state.answers[state.index] = event.target.value;
+  app.querySelector("[data-about]")?.addEventListener("click", () => app.querySelector("[data-about-dialog]")?.showModal()); app.addEventListener("change", (event) => { if (!event.target.matches("[data-answer]")) return;
+    const answerKey = event.target.dataset.answer === "2" ? "secondAnswers" : "answers"; state[answerKey][state.index] = event.target.value;
     saveState();
     render();
-    app.querySelector("[data-answer]")?.focus();
+    app.querySelector(`[data-answer="${event.target.dataset.answer}"]`)?.focus();
   });
   app.querySelector("[data-check]")?.addEventListener("click", () => {
-    if (!state.answers[state.index]) return;
+    if (!state.answers[state.index] || !state.secondAnswers[state.index]) return;
     state.revealed = true;
-    if (state.answers[state.index] === current.answer) state.score++;
+    if (state.answers[state.index] === current.answer && state.secondAnswers[state.index] === current.answer2) state.score++;
     saveState();
     render();
   });
@@ -184,8 +184,8 @@ function render() {
     render();
   });
 }
-function selectHTML(story, value) {
-  return `<select class="blank-select" data-answer aria-label="Choose the missing words"><option value="" ${value ? "" : "selected"} disabled>choose one</option>${story.options.map((option) => `<option value="${escapeHTML(option)}" ${value === option ? "selected" : ""}>${escapeHTML(option)}</option>`).join("")}</select>`;
+function selectHTML(story, value, number=1) { const options = number === 1 ? story.options : story.options2;
+  return `<select class="blank-select" data-answer="${number}" aria-label="Choose the missing words"><option value="" ${value ? "" : "selected"} disabled>choose one</option>${options.map((option) => `<option value="${escapeHTML(option)}" ${value === option ? "selected" : ""}>${escapeHTML(option)}</option>`).join("")}</select>`;
 }
 function renderFinish(streak) {
   return `<div class="finish-card">
