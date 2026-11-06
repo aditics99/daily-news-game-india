@@ -48,7 +48,7 @@ h1 mark::before { position: absolute; z-index: -1; right: -.03em; bottom: .05em;
 .blank-select { max-width: min(100%, 320px); min-height: 34px; padding: 3px 26px 5px 10px; appearance: none; border: 0; border-radius: 4px; background: var(--yellow); color: var(--ink); cursor: pointer; font-family: "DM Sans", sans-serif; font-size: 13px; font-weight: 700; vertical-align: baseline; }
 .blank-select:focus-visible { outline: 3px solid white; outline-offset: 2px; }
 .blank-select option { color: var(--ink); font: 14px "DM Sans", sans-serif; }
-.answer-reveal { padding: 1px 3px 3px; border-radius: 3px; background: var(--yellow); color: var(--ink); font-family: "DM Sans", sans-serif; font-size: .76em; font-weight: 700; }
+.answer-reveal { padding: 1px 0 3px 6px; border-radius: 3px; background: var(--yellow); color: var(--ink); font-family: "DM Sans", sans-serif; font-size: .76em; font-weight: 700; }
 .answer-reveal.is-wrong { background: #fff; }
 .primary-button, .share-button { position: relative; z-index: 1; display: flex; min-height: 48px; align-items: center; justify-content: center; gap: 16px; margin-top: 24px; padding: 0 21px; border: 0; border-radius: 30px; background: var(--ink); color: white; cursor: pointer; font-size: 13px; font-weight: 700; transition: transform .16s, opacity .16s; }
 .primary-button:hover, .share-button:hover { transform: translateY(-2px); }
