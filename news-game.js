@@ -130,7 +130,7 @@ function render() {
       <main class="content">
         <p class="kicker">${dateLabel()} <span>·</span> India edition</p>
         <h1>Daily news for the <mark>dopamine-fried</mark> brain.</h1>
-        <p class="intro">Five quick guesses. The bits worth remembering.</p>
+
         <section class="game-card" aria-label="Today's India news game">
           ${done ? renderFinish(streak) : `
             <div class="card-top"><span class="round-label">TODAY’S NEWS</span><span class="round-count">${String(state.index + 1).padStart(2, "0")} <i>/</i> 05</span></div>
@@ -148,12 +148,12 @@ function render() {
             ` : `<button class="primary-button" type="button" data-check ${answer ? "" : "disabled"}>Lock it in<span>→</span></button>`}
           `}
         </section>
-        <p class="social-nudge">A little news, a little game. <span>Send today’s edition to your group chat →</span></p>
+
       </main>
-      <footer class="footer"><span>Your Daily News Game · India</span><span>Hand-picked for today</span></footer>
+      <footer class="footer"><span>Your Daily News Game · India</span><button class="about-link" type="button" data-about>About</button></footer><dialog class="about-dialog" data-about-dialog aria-labelledby="about-title"><form method="dialog" class="about-dialog__form"><button class="about-close" aria-label="Close about">×</button></form><p class="about-kicker">WHY A NEWS GAME?</p><h2 id="about-title">Recall helps a story stick.</h2><p>When you try to remember a detail, you practise bringing it back to mind. That small act of recall can help news stay with you longer than simply scrolling past it. The explanation adds context after your guess.</p></dialog>
     </div>`;
 
-  app.querySelector("[data-answer]")?.addEventListener("change", (event) => {
+  app.querySelector("[data-about]")?.addEventListener("click", () => app.querySelector("[data-about-dialog]")?.showModal()); app.querySelector("[data-answer]")?.addEventListener("change", (event) => {
     state.answers[state.index] = event.target.value;
     saveState();
     render();
