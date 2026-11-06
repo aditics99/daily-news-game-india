@@ -41,7 +41,7 @@ const edition = {
     },
     {
       section: "How Parliament works",
-      headline: "BJP minister Hardeep Singh Puri elected unopposed from Madhya Pradesh",
+      headline: "Hardeep Singh Puri wins a Rajya Sabha seat from Madhya Pradesh",
       before: "Hardeep Singh Puri, a BJP leader and Union Petroleum Minister, was elected to the Rajya Sabha from Madhya Pradesh",
       after: " after two rival nominations were rejected, leaving him as the only candidate. State MLAs elect Rajya Sabha members; voters do not vote for them directly.",
       answer: "unopposed",
