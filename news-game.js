@@ -116,7 +116,7 @@ function render() {
   app.innerHTML = `
     <div class="page">
       <header class="masthead">
-        <a class="brand" href="./">Explain That<span>· Your daily news game</span></a>
+        <a class="brand" href="./">Your Daily News Game<span>· India</span></a>
         <div class="streak" aria-label="${streak} day streak"><span class="streak-fire">✳</span><strong>${streak}</strong><span>day streak</span></div>
       </header>
       <main class="content">
@@ -142,7 +142,7 @@ function render() {
         </section>
         <p class="social-nudge">A little news, a little game. <span>Send today’s edition to your group chat →</span></p>
       </main>
-      <footer class="footer"><span>Explain That · Your daily news game</span><span>Hand-picked for today</span></footer>
+      <footer class="footer"><span>Your Daily News Game · India</span><span>Hand-picked for today</span></footer>
     </div>`;
 
   app.querySelector("[data-answer]")?.addEventListener("change", (event) => {
@@ -190,11 +190,11 @@ function renderFinish(streak) {
   </div>`;
 }
 async function shareResult() {
-  const message = `I got ${state.score}/5 on Explain That · India today, and I’m on a ${getStreak()}-day streak. Can you beat me? ${location.href}`;
+  const message = `I got ${state.score}/5 on Your Daily News Game · India today, and I’m on a ${getStreak()}-day streak. Can you beat me? ${location.href}`;
   const feedback = app.querySelector("[data-share-feedback]");
   try {
     if (navigator.share) {
-      await navigator.share({ title: "Explain That · Your daily news game", text: message });
+      await navigator.share({ title: "Your Daily News Game · India", text: message });
       feedback.textContent = "Your score is ready to share.";
     } else {
       await navigator.clipboard.writeText(message);
