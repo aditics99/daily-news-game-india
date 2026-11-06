@@ -15,10 +15,10 @@ const edition = {
       section: "India & its neighbours",
       headline: "India offers Nepal help after Bhotekoshi floods",
       before: "During talks in Kathmandu, India’s Foreign Secretary,",
-      after: ", offered to help Nepal repair infrastructure damaged by the Bhotekoshi floods. India and Nepal also discussed their electricity trade agreement and Nepal PM Balen Shah’s expected visit to India, starting November 22.",
+      after: ", said India was ready to help Nepal repair infrastructure damaged by the Bhotekoshi floods. The two sides also discussed electricity trade. Nepal PM Balen Shah is expected to visit India from November 22.",
       answer: "Vikram Misri",
       options: ["Vikram Misri", "Amrit Bahadur Rai", "Shisir Khanal"],
-      explanation: "Vikram Misri is a senior Indian official who works on relations with other countries. A 2024 agreement aims for Nepal to export up to 10,000 MW of electricity to India over ten years. That is a long-term goal, not power arriving all at once. Repairing a damaged road, for example, can help local people travel and move goods.",
+      explanation: "Vikram Misri is a senior official who handles India’s relations with other countries. In 2024, India and Nepal agreed to work towards Nepal selling up to 10,000 MW of power to India over ten years. MW measures power supply; the agreement sets a long-term target, not a one-time delivery. If a flood damages a road or bridge, repairing it can help nearby people and goods move again.",
       sources: [
         { label: "The Kathmandu Post · flood-repair offer", url: "https://kathmandupost.com/national/2026/11/04/vikram-misri-says-india-ready-to-help-nepal-s-flood-hit-infrastructure" },
         { label: "PIB · India–Nepal power agreement", url: "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2099131&lang=2&reg=3" },
@@ -32,7 +32,7 @@ const edition = {
       after: ".",
       answer: "start mining",
       options: ["start mining", "sell electricity", "build a railway"],
-      explanation: "A mineral block is a mapped area of land that may contain useful minerals. Think of an exploration licence as permission to check what is underground. A company needs separate permission to start mining. This round offers 20 critical-mineral blocks and 11 exploration-licence blocks.",
+      explanation: "A mineral block is a mapped area of land that may contain useful minerals. Think of an exploration licence as permission to check what is underground. A company needs separate permission to start mining. This auction includes 20 mining blocks and 11 exploration licences.",
       source: { label: "Ministry of Mines · mineral auctions", url: "https://www.pib.gov.in/PressReleseDetailm.aspx?PRID=2333123&lang=2&reg=48" }
     },
     {
