@@ -1,21 +1,21 @@
 # Explain That
 
-A small daily news game for learning Indian news through short, natural fill-in-the-blank stories. The visual direction takes cues from [Preet Suthar](https://preetsuthar.me/): a narrow reading column, quiet dividers, restrained color, and very little interface chrome.
+Daily news for the dopamine-fried brain: a short, interactive way to understand and remember the stories behind the news. The visual direction takes cues from [Fermi](https://fermi.gg/)'s bold game card, clear progress, and shareable result, and [Preet Suthar](https://preetsuthar.me/)'s simple typography and restrained interface.
 
 ## Open the MVP
 
 Open `index.html` in a browser or publish the repository with GitHub Pages. There are no build steps, API keys, or server requirements for this static preview.
 
-The current story is marked as a **demo, not live news**. It uses a sourced example about updated Indian emission-certification rules for E100 flex-fuel vehicles. Live news discovery and editorial review are not connected yet; don't present the demo as today's news.
+The homepage currently contains five manually selected India stories for the 6 November 2026 edition. Each has a source link, a short fill-in prompt, and a plain-language explanation. The static site does not automatically discover or refresh stories; update the edition in `news-game.js` before presenting it as a new day's edition.
 
 ## Files
 
 - `index.html` is the public entry page.
 - `news-game.css` contains the responsive, text-first design.
-- `news-game.js` contains the demo story, dropdown choices, and fill-in interaction.
+- `news-game.js` contains the daily story set, dropdown choices, explanations, and fill-in interaction.
 - `editorial.html` is the earlier private cartoon archive desk, retained while the product direction changes.
 
-The game reveals the short explanation and source after the reader checks their answers. Correct completion is remembered in the current browser only.
+The game reveals the short explanation and source after each answer. A completed day and daily streak are remembered in the current browser only; the final score can be shared with the browser's share menu or copied to send to friends. There is no account-based leaderboard.
 
 ## Editorial guardrails
 
