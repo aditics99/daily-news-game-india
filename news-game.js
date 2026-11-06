@@ -3,22 +3,22 @@ const edition = {
   stories: [
     {
       section: "Democracy",
-      headline: "Voter rolls are being revised in six more states and Union Territories",
-      before: "The Election Commission has started a voter-list revision in six more states and Union Territories. Eligible voters can add or correct their details before the",
-      after: " are published.",
-      answer: "updated voter lists",
-      options: ["updated voter lists", "election results", "new constituency maps"],
-      explanation: "The revision covers Arunachal Pradesh, Chandigarh, Dadra and Nagar Haveli and Daman and Diu, Mizoram, Odisha and Sikkim. It gives people a chance to check that their voter details are correct.",
-      source: { label: "All India Radio · voter roll revision", url: "https://newsonair.gov.in/ec-announces-special-summary-revision-of-electoral-rolls-in-four-states-and-two-uts/" }
+      headline: "Election Commission starts voter-list updates in four states and two UTs",
+      before: "The Election Commission has started updating voter lists in Arunachal Pradesh, Mizoram, Odisha, Sikkim and two Union Territories. Eligible voters can check their details and",
+      after: " before the updated lists are finalized.",
+      answer: "ask for corrections",
+      options: ["ask for corrections", "cast their vote early", "choose a political party"],
+      explanation: "For example, if your name or other details are wrong on the list, you can ask for them to be corrected. The two Union Territories are Chandigarh and Dadra and Nagar Haveli and Daman and Diu.",
+      source: { label: "Akashvani · voter-list update", url: "https://newsonair.gov.in/ec-announces-special-summary-revision-of-electoral-rolls-in-four-states-and-two-uts/" }
     },
     {
       section: "India & its neighbours",
-      headline: "India offers help after Nepal’s Bhotekoshi floods",
+      headline: "India offers Nepal help after Bhotekoshi floods",
       before: "During talks in Kathmandu, India’s Foreign Secretary,",
-      after: ", said India was ready to help Nepal repair infrastructure damaged by the Bhotekoshi floods. The two countries also discussed a 2024 power agreement: India could import up to 10,000 MW of electricity from Nepal over ten years. Nepal’s prime minister, Balen Shah, is expected to visit India from November 22.",
+      after: ", offered to help Nepal repair infrastructure damaged by the Bhotekoshi floods. India and Nepal also discussed their electricity trade agreement and Nepal PM Balen Shah’s expected visit to India, starting November 22.",
       answer: "Vikram Misri",
       options: ["Vikram Misri", "Amrit Bahadur Rai", "Shisir Khanal"],
-      explanation: "Vikram Misri is India’s foreign secretary. The Bhotekoshi floods damaged infrastructure in Nepal, and India offered help with repairs. For example, repairing a damaged road can help nearby communities travel and move goods again. The power deal is a ten-year goal, not 10,000 MW arriving all at once.",
+      explanation: "Vikram Misri is a senior Indian official who works on relations with other countries. A 2024 agreement aims for Nepal to export up to 10,000 MW of electricity to India over ten years. That is a long-term goal, not power arriving all at once. Repairing a damaged road, for example, can help local people travel and move goods.",
       sources: [
         { label: "The Kathmandu Post · flood-repair offer", url: "https://kathmandupost.com/national/2026/11/04/vikram-misri-says-india-ready-to-help-nepal-s-flood-hit-infrastructure" },
         { label: "PIB · India–Nepal power agreement", url: "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2099131&lang=2&reg=3" },
@@ -27,34 +27,34 @@ const edition = {
     },
     {
       section: "Money & resources",
-      headline: "India opens a new round of critical-mineral auctions",
-      before: "The Ministry of Mines has put 20 critical-mineral blocks up for auction. A block is a mapped area where surveys suggest a mineral deposit may be present. The same announcement also opened bidding for 11 exploration licences. Unlike a mining licence, an exploration licence lets a company",
+      headline: "India opens auctions for mineral exploration and mining",
+      before: "The government is inviting companies to bid for mapped areas that may contain minerals used in electric vehicles, electronics and clean-energy equipment. An exploration licence lets a company search for minerals; it does not let the company",
       after: ".",
-      answer: "look for mineral deposits before mining begins",
-      options: ["look for mineral deposits before mining begins", "start selling finished batteries", "set prices for imported minerals"],
-      explanation: "A mineral block is a defined area offered to companies under set rules. Depending on the auction, a company can get permission to explore the area or to mine it. These minerals are called critical because several industries rely on them, including clean energy, electronics and electric vehicles.",
-      source: { label: "Ministry of Mines · 20 block and 11 exploration-licence auctions", url: "https://www.pib.gov.in/PressReleseDetailm.aspx?PRID=2333123&lang=2&reg=48" }
+      answer: "start mining",
+      options: ["start mining", "sell electricity", "build a railway"],
+      explanation: "A mineral block is a mapped area of land that may contain useful minerals. Think of an exploration licence as permission to check what is underground. A company needs separate permission to start mining. This auction includes 20 mining blocks and 11 exploration licences.",
+      source: { label: "Ministry of Mines · mineral auctions", url: "https://www.pib.gov.in/PressReleseDetailm.aspx?PRID=2333123&lang=2&reg=48" }
     },
     {
       section: "How Parliament works",
-      headline: "Hardeep Singh Puri elected unopposed to a Rajya Sabha seat",
-      before: "Hardeep Singh Puri was elected unopposed to a Rajya Sabha seat from Madhya Pradesh. For this kind of state seat, the voters are",
-      after: ".",
-      answer: "elected members of the state Assembly",
-      options: ["elected members of the state Assembly", "all residents in a direct public vote", "members of the Lok Sabha"],
-      explanation: "Rajya Sabha members representing a state are elected by that state’s elected MLAs. Puri was the only candidate left after the other nominations were rejected.",
+      headline: "Hardeep Singh Puri wins a Rajya Sabha seat without a public vote",
+      before: "Rajya Sabha members representing a state are elected by that state’s elected Assembly members, called",
+      after: ". Hardeep Singh Puri was declared elected from Madhya Pradesh after two other candidates’ nominations were rejected, leaving him as the only candidate.",
+      answer: "MLAs",
+      options: ["MLAs", "all adult voters", "members of the Lok Sabha"],
+      explanation: "MLA means Member of the Legislative Assembly. Unlike a Lok Sabha election, people do not vote directly for a state’s Rajya Sabha members; their elected MLAs choose. Puri was the only candidate left, so no polling was needed.",
       source: { label: "The Indian Express · Rajya Sabha election", url: "https://indianexpress.com/article/india/hardeep-singh-puri-elected-unopposed-rajya-sabha-madhya-pradesh-10952368/" }
     },
     {
       section: "Everyday India",
-      headline: "New Delhi railway station plans separate routes for passengers",
-      before: "New Delhi railway station is setting up separate entry and exit routes for reserved and unreserved passengers to help manage",
-      after: ".",
-      answer: "festival crowds",
-      options: ["festival crowds", "a new metro line", "freight trains"],
-      explanation: "The change is intended to make passenger movement easier during the busy Diwali and Chhath travel period. Separate routes can help reduce bottlenecks at the station.",
+      headline: "New Delhi station separates routes for reserved and general-ticket passengers",
+      before: "During the Diwali and Chhath rush, New Delhi railway station is sending passengers with reserved tickets and general tickets through",
+      after: ". The aim is to reduce crowding at busy entry points and on platforms.",
+      answer: "different gates",
+      options: ["different gates", "different trains", "separate ticket counters"],
+      explanation: "Reserved tickets include Sleeper and AC classes; general tickets do not reserve a seat. Separate gates and one-way routes can reduce bottlenecks, like separate queues at a busy venue. Signs will help passengers find the right gate.",
       source: { label: "The Indian Express · New Delhi station arrangements", url: "https://indianexpress.com/article/india/new-delhi-railway-station-separate-entry-exit-gates-diwali-chhath-puja-10952299/" }
-    }
+    },
   ]
 };
 
