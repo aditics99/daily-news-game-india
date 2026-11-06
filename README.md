@@ -1,8 +1,10 @@
-# Explain That
+# Your Daily News Game · India
 
 Daily news for the dopamine-fried brain: a short, interactive way to understand and remember the stories behind the news. The visual direction takes cues from [Fermi](https://fermi.gg/)'s bold game card, clear progress, and shareable result, and [Preet Suthar](https://preetsuthar.me/)'s simple typography and restrained interface.
 
 ## Open the MVP
+
+Play the live edition at [Your Daily News Game · India](https://aditics99.github.io/daily-news-game-india/).
 
 Open `index.html` in a browser or publish the repository with GitHub Pages. There are no build steps, API keys, or server requirements for this static preview.
 
