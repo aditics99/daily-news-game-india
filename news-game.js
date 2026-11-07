@@ -43,7 +43,7 @@ const edition = {
       before2: "; it is not a court finding of guilt.",
       answer2: "investigation",
       options2: ["investigation", "conviction", "sentencing"],
-      after2: " such as a recent utility bill or bank passbook when they submit the form.",
+      after2: "",
       explanation: "Future Retail ran stores including Big Bazaar. The CBI says SBI complained that loan money may have been diverted through connected companies. An FIR starts an investigation; a court has not yet decided whether anyone is guilty.",
       source: { label: "Business Standard · CBI case", url: "https://www.business-standard.com/industry/news/cbi-books-kishore-biyani-future-retail-in-alleged-904-cr-bank-fraud-126110601341_1.html" }
     },
@@ -57,7 +57,7 @@ const edition = {
       before2: ". The usual last departure is 11 pm.",
       answer2: "10 pm",
       options2: ["10 pm", "9 pm", "midnight"],
-      after2: " such as a recent utility bill or bank passbook when they submit the form.",
+      after2: "",
       explanation: "A terminal is the end of a metro line. DMRC’s time is the last departure from a terminal, not necessarily the last train time at your station. The Pink, Magenta and Grey lines also start an hour earlier.",
       source: { label: "Delhi Metro · Diwali schedule", url: "https://delhimetrorail.com/pages/en/pressrelease_details/last-metro-train-service-to-commence-at-1000-pm-4" }
     },
@@ -68,10 +68,10 @@ const edition = {
       answer: "2030",
       options: ["2030", "2035", "2040"],
       after: ". This means future missions should leave less broken equipment circling Earth. Old satellites and rocket pieces can threaten working spacecraft. The target covers ",
-      before2: ".",
+      before2: "",
       answer2: "government and private missions",
       options2: ["government and private missions", "only ISRO missions", "only foreign missions"],
-      after2: " such as a recent utility bill or bank passbook when they submit the form.",
+      after2: ".",
       explanation: "Orbital debris is abandoned satellites and rocket pieces circling Earth. Think of a busy road: a broken object left in orbit can hit spacecraft that still work. India’s mission aims to prevent both government and private space activity from adding new debris by 2030.",
       source: { label: "NDTV · India’s Swachh Space plan", url: "https://www.ndtv.com/india-news/swachh-space-indias-plan-to-clean-up-its-orbital-trash-by-2030-12289848" }
     }
