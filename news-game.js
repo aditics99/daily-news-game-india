@@ -26,10 +26,10 @@ const edition = {
       answer: "enumeration forms",
       options: ["enumeration forms", "polling slips", "party forms"],
       after: " so they can update their details. People who have moved should attach ",
-      before2: " such as a recent utility bill or bank passbook when they submit the form.",
+      before2: "",
       answer2: "address proof",
       options2: ["address proof", "a party letter", "a new voter card"],
-      after2: "",
+      after2: " such as a recent utility bill or bank passbook when they submit the form.",
       explanation: "SIR means Special Intensive Revision: a check of voter lists. The fresh forms are for eligible people whose earlier form was not returned. This round covers Delhi, Maharashtra, Haryana, Andhra Pradesh, Jharkhand, Telangana and Nagaland. The draft list can still be corrected before it becomes final.",
       source: { label: "NDTV · fresh chance for voters", url: "https://www.ndtv.com/india-news/second-chance-for-voters-left-out-of-draft-sir-rolls-in-delhi-maharashtra-haryana-andhra-pradesh-jharkhand-telangana-and-nagaland-12293562?pfrom=top_widget_trending" }
     },
@@ -43,7 +43,7 @@ const edition = {
       before2: "; it is not a court finding of guilt.",
       answer2: "investigation",
       options2: ["investigation", "conviction", "sentencing"],
-      after2: "",
+      after2: " such as a recent utility bill or bank passbook when they submit the form.",
       explanation: "Future Retail ran stores including Big Bazaar. The CBI says SBI complained that loan money may have been diverted through connected companies. An FIR starts an investigation; a court has not yet decided whether anyone is guilty.",
       source: { label: "Business Standard · CBI case", url: "https://www.business-standard.com/industry/news/cbi-books-kishore-biyani-future-retail-in-alleged-904-cr-bank-fraud-126110601341_1.html" }
     },
@@ -57,7 +57,7 @@ const edition = {
       before2: ". The usual last departure is 11 pm.",
       answer2: "10 pm",
       options2: ["10 pm", "9 pm", "midnight"],
-      after2: "",
+      after2: " such as a recent utility bill or bank passbook when they submit the form.",
       explanation: "A terminal is the end of a metro line. DMRC’s time is the last departure from a terminal, not necessarily the last train time at your station. The Pink, Magenta and Grey lines also start an hour earlier.",
       source: { label: "Delhi Metro · Diwali schedule", url: "https://delhimetrorail.com/pages/en/pressrelease_details/last-metro-train-service-to-commence-at-1000-pm-4" }
     },
@@ -71,7 +71,7 @@ const edition = {
       before2: ".",
       answer2: "government and private missions",
       options2: ["government and private missions", "only ISRO missions", "only foreign missions"],
-      after2: "",
+      after2: " such as a recent utility bill or bank passbook when they submit the form.",
       explanation: "Orbital debris is abandoned satellites and rocket pieces circling Earth. Think of a busy road: a broken object left in orbit can hit spacecraft that still work. India’s mission aims to prevent both government and private space activity from adding new debris by 2030.",
       source: { label: "NDTV · India’s Swachh Space plan", url: "https://www.ndtv.com/india-news/swachh-space-indias-plan-to-clean-up-its-orbital-trash-by-2030-12289848" }
     }
