@@ -15,7 +15,7 @@ const savedKey = "explain-that-india-daily-v1";
 const progressKey = "explain-that-india-streak-v1";
 const today = edition.date;
 const blankState = () => ({ index: 0, answers: [], secondAnswers: [], revealed: false, revealedCorrect: false, score: 0, finished: false });
-let state = loadState();
+let state = blankState();
 
 function istDate(date = new Date()) {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata", year: "numeric", month: "2-digit", day: "2-digit" }).format(date);
@@ -138,7 +138,7 @@ function renderFinish(streak) {
   return `<div class="finish-card">
     <p class="finish-kicker">YOU MADE IT THROUGH TODAY’S INDIA EDITION</p>
     <h2>${state.score}<span> / 5</span></h2>
-    <p class="finish-copy">stories in your head now.<br><strong>That’s a ${streak}-day streak.</strong></p>
+    <p class="finish-copy">stories in your head now.<br><strong>That’s a ${streak}-day streak.</strong></p><div class="finish-recap"><p class="finish-summary">Delhi-NCR tightened pollution curbs, and the Election Commission reopened voter-list forms. A CBI case is tracing Future Retail loans; Delhi Metro adjusted Diwali hours, and India set a 2030 target to limit new space debris.</p><h3>More interesting things today</h3><ul><li><a href="https://indianexpress.com/article/india/pm-modi-chhattisgarh-bastar-diwali-celebration-security-forces-10955301/" target="_blank" rel="noopener noreferrer">PM Modi is celebrating Diwali with security forces in Bastar.</a></li><li><a href="https://timesofindia.indiatimes.com/sports/more-sports/others/taniya-scripts-history-indias-first-ever-beach-wrestling-medallist-at-youth-olympics-with-silver-in-dakar/amp_articleshow/135649880.cms" target="_blank" rel="noopener noreferrer">Wrestler Taniya won India’s first Youth Olympics beach-wrestling medal: silver in the 75 kg event.</a></li><li><a href="https://indianexpress.com/article/india/il-76-heavy-lift-aircraft-lands-nyoma-airbase-10954937/lite/" target="_blank" rel="noopener noreferrer">An Indian Air Force transport plane landed at Nyoma, Ladakh, at 13,629 feet—its highest landing yet.</a></li></ul></div>
     <div class="finish-actions"><button class="share-button" type="button" data-share>Share your score <span>↗</span></button><button class="replay-button" type="button" data-replay>Play again</button></div>
     <p class="share-feedback" data-share-feedback aria-live="polite"></p>
     <p class="streak-note">Your streak is saved on this device. Come back tomorrow to keep it going.</p>
