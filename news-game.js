@@ -123,6 +123,7 @@ function render() {
     }
     saveState();
     render();
+    if (state.finished) loadScoreComparison();
   });
   app.querySelector("[data-share]")?.addEventListener("click", shareResult);
   app.querySelector("[data-replay]")?.addEventListener("click", () => {
@@ -138,11 +139,59 @@ function renderFinish(streak) {
   return `<div class="finish-card">
     <p class="finish-kicker">YOU MADE IT THROUGH TODAY’S INDIA EDITION</p>
     <h2>${state.score}<span> / 5</span></h2>
-    <p class="finish-copy">stories in your head now.<br><strong>That’s a ${streak}-day streak.</strong></p><div class="finish-recap"><h3>More interesting things today</h3><ul><li><a href="https://indianexpress.com/article/india/pm-modi-chhattisgarh-bastar-diwali-celebration-security-forces-10955301/" target="_blank" rel="noopener noreferrer">PM Modi is celebrating Diwali with security forces in Bastar.</a></li><li><a href="https://timesofindia.indiatimes.com/sports/more-sports/others/taniya-scripts-history-indias-first-ever-beach-wrestling-medallist-at-youth-olympics-with-silver-in-dakar/amp_articleshow/135649880.cms" target="_blank" rel="noopener noreferrer">Wrestler Taniya won India’s first Youth Olympics beach-wrestling medal: silver in the 75 kg event.</a></li><li><a href="https://indianexpress.com/article/india/il-76-heavy-lift-aircraft-lands-nyoma-airbase-10954937/lite/" target="_blank" rel="noopener noreferrer">An Indian Air Force transport plane landed at Nyoma, Ladakh, at 13,629 feet—its highest landing yet.</a></li></ul></div>
+    <p class="finish-copy">stories in your head now.<br><strong>That’s a ${streak}-day streak.</strong></p>
+    <section class="score-comparison" data-score-comparison aria-live="polite"><h3>How did you compare?</h3><p>Loading today’s scores…</p></section><div class="finish-recap"><h3>More interesting things today</h3><ul><li><a href="https://indianexpress.com/article/india/pm-modi-chhattisgarh-bastar-diwali-celebration-security-forces-10955301/" target="_blank" rel="noopener noreferrer">PM Modi is celebrating Diwali with security forces in Bastar.</a></li><li><a href="https://timesofindia.indiatimes.com/sports/more-sports/others/taniya-scripts-history-indias-first-ever-beach-wrestling-medallist-at-youth-olympics-with-silver-in-dakar/amp_articleshow/135649880.cms" target="_blank" rel="noopener noreferrer">Wrestler Taniya won India’s first Youth Olympics beach-wrestling medal: silver in the 75 kg event.</a></li><li><a href="https://indianexpress.com/article/india/il-76-heavy-lift-aircraft-lands-nyoma-airbase-10954937/lite/" target="_blank" rel="noopener noreferrer">An Indian Air Force transport plane landed at Nyoma, Ladakh, at 13,629 feet—its highest landing yet.</a></li></ul></div>
     <div class="finish-actions"><button class="share-button" type="button" data-share>Share your score <span>↗</span></button><button class="replay-button" type="button" data-replay>Play again</button></div>
     <p class="share-feedback" data-share-feedback aria-live="polite"></p>
     <p class="streak-note">Your streak is saved on this device. Come back tomorrow to keep it going.</p>
   </div>`;
+}
+async function postScoreRPC(functionName, payload) {
+  const config = window.EXPLAIN_THAT_SUPABASE;
+  const response = await fetch(config.url + "/rest/v1/rpc/" + functionName, {
+    method: "POST",
+    headers: { apikey: config.publishableKey, "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  if (!response.ok) throw new Error("Score service returned " + response.status);
+  const text = await response.text();
+  return text ? JSON.parse(text) : null;
+}
+function getPlayerId() {
+  const key = "daily-news-game-player-v1";
+  let id = localStorage.getItem(key);
+  if (!id) {
+    id = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (char) => {
+      const value = Math.floor(Math.random() * 16);
+      return (char === "x" ? value : (value & 3) | 8).toString(16);
+    });
+    localStorage.setItem(key, id);
+  }
+  return id;
+}
+async function loadScoreComparison() {
+  const panel = app.querySelector("[data-score-comparison]");
+  if (!panel) return;
+  const config = window.EXPLAIN_THAT_SUPABASE;
+  if (!config?.url || !config?.publishableKey) {
+    panel.innerHTML = "<h3>How did you compare?</h3><p>Score comparison will appear here when it’s connected.</p>";
+    return;
+  }
+  try {
+    await postScoreRPC("submit_daily_game_score", { p_edition_date: today, p_player_id: getPlayerId(), p_score: state.score });
+    const rows = await postScoreRPC("get_daily_game_score_distribution", { p_edition_date: today });
+    const distribution = Array.isArray(rows) ? rows : [];
+    const counts = Array.from({ length: 6 }, (_, score) => Number(distribution.find((row) => Number(row.score) === score)?.player_count || 0));
+    const total = counts.reduce((sum, count) => sum + count, 0);
+    const lower = counts.slice(0, state.score).reduce((sum, count) => sum + count, 0);
+    const tied = counts[state.score] || 0;
+    const percentile = total ? Math.round(((lower + tied / 2) / total) * 100) : 0;
+    const maxCount = Math.max(...counts, 1);
+    const bars = counts.map((count, score) => '<div class="score-bin ' + (score === state.score ? 'is-yours' : '') + '" aria-label="' + count + ' players scored ' + score + ' out of 5"><span class="score-bin-count">' + count + '</span><span class="score-bin-bar" style="height:' + Math.max(count ? 12 : 3, (count / maxCount) * 100) + '%"></span><span class="score-bin-label">' + score + '</span></div>').join('');
+    panel.innerHTML = '<h3>How did you compare?</h3><p class="score-comparison-result">You scored higher than <strong>' + percentile + '%</strong> of players today.</p><div class="score-distribution" role="img" aria-label="Score distribution across ' + total + ' players">' + bars + '</div><p class="score-comparison-note">' + total + ' ' + (total === 1 ? 'player has' : 'players have') + ' finished today. Your score is shared anonymously.</p>';
+  } catch {
+    panel.innerHTML = "<h3>How did you compare?</h3><p>Today’s group scores aren’t available yet. Your score is still saved on this device.</p>";
+  }
 }
 async function shareResult() {
   const message = `I got ${state.score}/5 on Your Daily News Game · India today, and I’m on a ${getStreak()}-day streak. Can you beat me? ${location.href}`;
