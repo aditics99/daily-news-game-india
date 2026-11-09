@@ -132,7 +132,15 @@ function render() {
     render();
   });
 }
-function selectHTML(story, value, number=1) { const options = number === 1 ? story.options : story<div class="finish-recap"><h3>More interesting things today</h3><ul><li><a href="https://indianexpress.com/article/explained/explained-economics/10-years-demonetisation-india-cash-currency-gdp-digital-payments-10956081/" target="_blank" rel="noopener noreferrer">A decade after demonetisation, cash in circulation has more than doubled as digital payments have grown.</a></li><li><a href="https://www.business-standard.com/cricket/news/new-zealand-vs-india-3rd-odi-playing-11-live-toss-time-ist-streaming-126110900175_1.html" target="_blank" rel="noopener noreferrer">India can seal its ODI series against New Zealand in Tuesday’s third match in Hamilton.</a></li><li><a href="https://indianexpress.com/article/india/karnataka-excess-ethanol-claims-kerala-inspections-sample-testing-petrol-10956218/" target="_blank" rel="noopener noreferrer">Kerala has started testing petrol samples in four districts after Karnataka’s claims.</a></li></ul></div>
+function selectHTML(story, value, number=1) { const options = number === 1 ? story.options : story.options2;
+  return `<select class="blank-select" data-answer="${number}" aria-label="Choose the missing words"><option value="" ${value ? "" : "selected"} disabled>choose one</option>${options.map((option) => `<option value="${escapeHTML(option)}" ${value === option ? "selected" : ""}>${escapeHTML(option)}</option>`).join("")}</select>`;
+}
+function renderFinish(streak) {
+  return `<div class="finish-card">
+    <p class="finish-kicker">YOU MADE IT THROUGH TODAY’S INDIA EDITION</p>
+    <h2>${state.score}<span> / 5</span></h2>
+    <p class="finish-copy">stories in your head now.<br><strong>That’s a ${streak}-day streak.</strong></p>
+    <section class="score-comparison" data-score-comparison aria-live="polite"><h3>How did you compare?</h3><p>Loading today’s scores…</p></section><div class="finish-recap"><h3>More interesting things today</h3><ul><li><a href="https://indianexpress.com/article/explained/explained-economics/10-years-demonetisation-india-cash-currency-gdp-digital-payments-10956081/" target="_blank" rel="noopener noreferrer">A decade after demonetisation, cash in circulation has more than doubled as digital payments have grown.</a></li><li><a href="https://www.business-standard.com/cricket/news/new-zealand-vs-india-3rd-odi-playing-11-live-toss-time-ist-streaming-126110900175_1.html" target="_blank" rel="noopener noreferrer">India can seal its ODI series against New Zealand in Tuesday’s third match in Hamilton.</a></li><li><a href="https://indianexpress.com/article/india/karnataka-excess-ethanol-claims-kerala-inspections-sample-testing-petrol-10956218/" target="_blank" rel="noopener noreferrer">Kerala has started testing petrol samples in four districts after Karnataka’s claims.</a></li></ul></div>
     <div class="finish-actions"><button class="share-button" type="button" data-share>Share your score <span>↗</span></button><button class="replay-button" type="button" data-replay>Play again</button></div>
     <p class="share-feedback" data-share-feedback aria-live="polite"></p>
     <p class="streak-note">Your streak is saved on this device. Come back tomorrow to keep it going.</p>
