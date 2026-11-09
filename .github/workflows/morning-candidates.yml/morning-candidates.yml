@@ -1,0 +1,33 @@
+name: Morning India news candidates
+
+on:
+  schedule:
+    - cron: "30 1 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  candidates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Collect candidate headlines
+        run: python scripts/collect_candidates.py > morning-candidates.md
+      - name: Post the review list
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          day="$(TZ=Asia/Kolkata date +'%Y-%m-%d')"
+          title="Morning India news leads — $day"
+          existing="$(gh issue list --state all --search "$title in:title" --json number --jq '.[0].number // empty')"
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body-file morning-candidates.md
+          else
+            gh issue create --title "$title" --body-file morning-candidates.md
+          fi
