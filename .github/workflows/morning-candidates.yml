@@ -28,7 +28,7 @@ jobs:
           python-version: "3.12"
       - name: Research, write, and validate today’s edition
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GITHUB_RUN_NUMBER: ${{ github.run_number }}
         run: python scripts/publish_daily_edition.py
       - name: Commit the generated edition
