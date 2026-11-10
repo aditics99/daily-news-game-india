@@ -133,7 +133,7 @@ def api_response(prompt):
         with urlopen(request, timeout=600) as response:
             result = json.loads(response.read())
     except Exception as error:
-        raise RuntimeError("The free-tier news-writing service request failed: " + type(error).__name__) from error
+                raise RuntimeError("Gemini request failed" + (" (HTTP " + str(error.code) + ": " + json.loads(error.read().decode("utf-8")).get("error", {}).get("message", "")[:400] + ")" if hasattr(error, "code") else " (" + type(error).__name__ + ")")) from error
 
     candidates = result.get("candidates") or []
     if not candidates:
