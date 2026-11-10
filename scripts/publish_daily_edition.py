@@ -246,13 +246,13 @@ def main():
     now = datetime.now(timezone.utc)
     candidates, failures = fetch_candidates(now)
     prompt = build_prompt(candidates, failures)
-    for attempt in range(2):
+    for attempt in range(3):
         edition, searched = api_response(prompt)
         try:
             edition = validate_edition(edition, searched)
             break
         except RuntimeError as error:
-            if attempt == 1:
+            if attempt == 2:
                 raise
             failures.append("Draft attempt " + str(attempt + 1) + " failed validation: " + str(error))
             prompt = build_prompt(candidates, failures)
