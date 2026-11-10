@@ -14,8 +14,8 @@ import xml.etree.ElementTree as ET
 from zoneinfo import ZoneInfo
 
 IST = ZoneInfo("Asia/Kolkata")
-API_URL = "https://api.openai.com/v1/responses"
-MODEL = "gpt-6-astra"
+API_URL = "https://generativelanguage.googleapis.com/v1beta/models"
+MODEL = "gemini-2.5-flash-lite"
 CATEGORIES = ["Politics & public life", "Business & money", "Everyday India", "Science & environment", "Sport", "Culture & entertainment"]
 QUERIES = [
     ("Politics & public life", "India politics government parliament court policy"),
@@ -111,56 +111,54 @@ def fetch_candidates(now):
         if item["title"] not in seen:
             picked.append(item)
             seen.add(item["title"])
-        if len(picked) >= 45:
+        if len(picked) >= 25:
             break
     if len(picked) < 15:
         raise RuntimeError("Only " + str(len(picked)) + " recent India leads were found; refusing to publish a thin edition. Feed status: " + ", ".join(failures))
-    return picked[:45], failures
+    return picked[:25], failures
 
 
 def api_response(prompt):
-    key = os.environ.get("OPENAI_API_KEY", "")
+    key = os.environ.get("GEMINI_API_KEY", "")
     if not key:
-        raise RuntimeError("OPENAI_API_KEY is missing. Add it as a GitHub Actions repository secret.")
+        raise RuntimeError("GEMINI_API_KEY is missing. Add it as a GitHub Actions repository secret.")
+
     request_body = {
-        "model": MODEL,
-        "reasoning": {"effort": "medium"},
-        "tools": [{"type": "web_search", "search_context_size": "high"}],
-        "tool_choice": "required",
-        "include": ["web_search_call.action.sources"],
-        "store": False,
-        "max_output_tokens": 12000,
-        "text": {"format": {"type": "json_schema", "name": "daily_india_news_edition", "strict": True, "schema": SCHEMA}},
-        "input": prompt
+        "contents": [{"parts": [{"text": prompt}]}],
+        "tools": [{"google_search": {}}],
+        "generationConfig": {"temperature": 0.2, "maxOutputTokens": 12000}
     }
-    request = Request(API_URL, data=json.dumps(request_body).encode(), headers={"Authorization": "Bearer " + key, "Content-Type": "application/json"}, method="POST")
+    request = Request(API_URL + "/" + MODEL + ":generateContent", data=json.dumps(request_body).encode(), headers={"x-goog-api-key": key, "Content-Type": "application/json"}, method="POST")
     try:
         with urlopen(request, timeout=600) as response:
             result = json.loads(response.read())
     except Exception as error:
-        raise RuntimeError("The news-writing service request failed: " + type(error).__name__) from error
-    if result.get("status") != "completed":
-        raise RuntimeError("The news-writing service did not complete the edition.")
-    text = None
-    searched = set()
-    for item in result.get("output", []):
-        if item.get("type") == "web_search_call":
-            action = item.get("action") or {}
-            for source in action.get("sources", []):
-                if source.get("url"):
-                    searched.add(canonical_url(source["url"]))
-        if item.get("type") == "message":
-            for content in item.get("content", []):
-                if content.get("type") == "output_text":
-                    text = content.get("text")
+        raise RuntimeError("The free-tier news-writing service request failed: " + type(error).__name__) from error
+
+    candidates = result.get("candidates") or []
+    if not candidates:
+        raise RuntimeError("The news-writing service returned no finished draft.")
+    candidate = candidates[0]
+    parts = (candidate.get("content") or {}).get("parts", [])
+    text = "".join(part.get("text", "") for part in parts).strip()
+    if text.startswith("```"):
+        text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text, flags=re.I).strip()
     if not text:
-        raise RuntimeError("The news-writing service returned no finished story set.")
+        raise RuntimeError("The news-writing service returned no structured story set.")
     try:
         edition = json.loads(text)
     except json.JSONDecodeError as error:
         raise RuntimeError("The news-writing service returned unreadable structured content.") from error
+
+    grounding = candidate.get("groundingMetadata") or {}
+    searched = set()
+    for chunk in grounding.get("groundingChunks", []):
+        source = chunk.get("web") or {}
+        url = source.get("uri")
+        if url:
+            searched.add(canonical_url(url))
     if not searched:
-        raise RuntimeError("No web search sources were returned; refusing to publish without source verification.")
+        raise RuntimeError("Google Search returned no cited sources; refusing to publish without source verification.")
     return edition, searched
 
 
@@ -244,7 +242,7 @@ Source every story with at least two independent links returned by your web sear
 
 The news RSS candidates below are headlines, publisher names, short snippets, timestamps, and topic tags. Search the web for each promising lead, open reliable coverage, and select based on public importance and cross-topic relevance. Do not simply rewrite the headline. RSS collection errors, if any: {failures}
 
-Return only the required structured fields. Category must be one of: {', '.join(CATEGORIES)}.
+Return only valid JSON with this shape: {{"stories":[{{"section":"...","headline":"...","copy":"...","answer":"...","options":["...","...","..."],"answer2":"...","options2":["...","...","..."],"explanation":"...","sources":[{{"label":"...","url":"https://..."}},{{"label":"...","url":"https://..."}}]}}],"moreToday":[{{"text":"...","url":"https://..."}},{{"text":"...","url":"https://..."}},{{"text":"...","url":"https://..."}}]}}. Each story must include exactly the named fields. Explain unfamiliar acronyms and institutions in plain language at first mention. Category must be one of: {', '.join(CATEGORIES)}.
 CANDIDATES:
 {payload}"""
 
