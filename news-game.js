@@ -89,11 +89,11 @@ function render() {
   app.innerHTML = `
     <div class="page">
       <header class="masthead">
-        <a class="brand" href="./">Your Daily News Game<span>· India</span></a>
+        
         <div class="streak" aria-label="${streak} day streak"><span class="streak-fire">✳</span><strong>${streak}</strong><span>day streak</span></div>
       </header>
       <main class="content">
-        <p class="kicker">${dateLabel()} <span>·</span> India edition</p>
+        
         <h1>Daily news for the <mark>dopamine-fried</mark> brain.</h1>
 
         <section class="game-card" aria-label="Today's India news game">
