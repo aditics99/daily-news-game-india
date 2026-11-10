@@ -18,11 +18,12 @@ QUERIES = [
     ("Science & technology", "India science technology"),
     ("Culture & entertainment", "India culture entertainment"),
 ]
-EXCLUDE = re.compile(r"\b(killed|dead|death|dies|died|murder|rape|assault|crash|explosion|bomb|attack|terror|injured|flood|cyclone|earthquake|suicide|massacre)\b", re.I)
+
 
 def text_of(node, name):
     child = next((item for item in node if item.tag.rsplit("}", 1)[-1] == name), None)
     return unescape("".join(child.itertext()).strip()) if child is not None else ""
+
 
 def fetch(query, now):
     url = "https://news.google.com/rss/search?q=" + quote_plus(query + " when:1d") + "&hl=en-IN&gl=IN&ceid=IN:en"
@@ -36,7 +37,7 @@ def fetch(query, now):
         title = text_of(item, "title")
         link = text_of(item, "link")
         published = text_of(item, "pubDate")
-        if not title or not link or EXCLUDE.search(title):
+        if not title or not link:
             continue
         try:
             date = parsedate_to_datetime(published).astimezone(timezone.utc)
@@ -46,6 +47,7 @@ def fetch(query, now):
         source = text_of(item, "source") or "News source"
         items.append({"title": title.replace("|", "–"), "url": link, "source": source, "date": date, "age": age, "query": query})
     return items
+
 
 def main():
     now = datetime.now(timezone.utc)
@@ -65,7 +67,7 @@ def main():
             failures.append(f"{label}: {type(error).__name__}")
     ranked = sorted(grouped.values(), key=lambda item: (item["query_hits"] * 10 + max(0, 24 - item["age"]) / 4), reverse=True)[:25]
     print(f"# Morning India news leads — {edition_date}\n")
-    print("These are discovery leads from Google News RSS, ranked by appearance across topic searches and recency. They are not approved game stories and are not published on the website. Check the linked reporting, avoid tragedy-led stories, then write and review five simple stories with two fair blanks each.\n")
+    print("These are discovery leads from Google News RSS, ranked by appearance across topic searches and recency. They are not approved game stories and are not published on the website. Review every linked report before use. Significant disaster stories may be considered sensitively; never turn deaths, injuries, or casualty counts into blanks or scores.\n")
     if failures:
         print("Some topic searches did not load: " + ", ".join(failures) + ".\n")
     if not ranked:
@@ -76,6 +78,7 @@ def main():
         published = item["date"].astimezone(IST).strftime("%I:%M %p IST")
         title = item["title"].replace("[", "(").replace("]", ")")
         print(f"{index}. [{title}]({item['url']}) — {item['source']} · {published} · {categories}")
+
 
 if __name__ == "__main__":
     main()
