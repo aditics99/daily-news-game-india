@@ -233,7 +233,7 @@ For each story: write a specific headline; write a natural, simple story of 2–
 
 Attribute allegations and changing estimates. Include specific people, places, dates, decisions, and amounts when they matter. A significant disaster may be covered; describe verified location and magnitude where relevant, and mention rescue, relief, or recovery work underway. Never make death, injury, casualty, or graphic-harm counts into a blank or score.
 
-Source each story with at least one relevant HTTPS URL from the candidate list. Use only links that support the story; never invent a URL or claim. Choose three additional moreToday links from other candidates, separate from the five main stories.
+Source each story with at least one relevant HTTPS URL copied exactly from the candidate list. Never substitute or construct a URL. Use only links that support that story. Choose three extra links from other candidates.
 
 The candidates below contain current headlines, publisher names, short snippets, timestamps, topics, and article links. Use these as your only factual basis and source links; choose stories with enough detail to write accurately.
 
