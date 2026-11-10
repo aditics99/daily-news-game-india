@@ -4,7 +4,7 @@ A short daily game that helps readers understand the news by actively recalling 
 
 ## How the daily edition is made
 
-A GitHub Actions workflow runs every morning at **7:00 AM India time**. It gathers English-language India news headlines from Google News RSS feeds, ranks and deduplicates the leads, and posts a review shortlist of up to 25 candidates as a GitHub issue. The workflow can also be started manually from the repository’s **Actions → Morning India news candidates** page.
+A GitHub Actions workflow is configured to run every morning at **7:00 AM India time**. It gathers English-language India news headlines from Google News RSS feeds, ranks and deduplicates the leads, and posts a review shortlist of up to 25 candidates as a GitHub issue. The workflow can also be started manually from the repository’s **Actions → Morning India news candidates** page.
 
 This is a discovery aid, not an automatic publisher. An editor still needs to verify the reporting, select the day’s strongest stories, write the game copy and explanations, and update news-game.js. The public site is a static GitHub Pages app; candidate collection does not change the live edition.
 
