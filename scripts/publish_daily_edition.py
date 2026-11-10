@@ -150,9 +150,9 @@ def api_response(prompt):
     except json.JSONDecodeError as error:
         raise RuntimeError("The news-writing service returned unreadable structured content.") from error
 
-            searched = {canonical_url(url) for url in re.findall(r'https://[^\s"]+', prompt)}
-        if not searched:
-            raise RuntimeError("News feed provided no source links; refusing to publish.")
+    searched = {canonical_url(url) for url in re.findall(r'https://[^\s"]+', prompt)}
+    if not searched:
+        raise RuntimeError("News feed provided no source links; refusing to publish.")
         
     return edition, searched
 
