@@ -238,7 +238,7 @@ Source each story with at least one relevant HTTPS URL from the candidate list. 
 The candidates below contain current headlines, publisher names, short snippets, timestamps, topics, and article links. Use these as your only factual basis and source links; choose stories with enough detail to write accurately.
 
 Return only valid JSON with this shape: {{"stories":[{{"section":"...","headline":"...","copy":"...","answer":"...","options":["...","...","..."],"answer2":"...","options2":["...","...","..."],"explanation":"...","sources":[{{"label":"...","url":"https://..."}},{{"label":"...","url":"https://..."}}]}}],"moreToday":[{{"text":"...","url":"https://..."}},{{"text":"...","url":"https://..."}},{{"text":"...","url":"https://..."}}]}}. Each story must include exactly the named fields. Explain unfamiliar acronyms and institutions in plain language at first mention. Category must be one of: {', '.join(CATEGORIES)}.
-CANDIDATES:
+PREVIOUS VALIDATION ISSUES: {json.dumps(failures)}. Fix each issue before returning valid JSON. CANDIDATES:
 {payload}"""
 
 
