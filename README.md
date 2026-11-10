@@ -4,7 +4,7 @@ A daily game that helps people understand India’s news by recalling the detail
 
 ## What the daily automation does
 
-At **7:00 AM India time**, GitHub Actions gathers recent English-language India headlines across politics and public life, business, everyday services, science and environment, sport, and culture. An AI editor researches the leads on the live web, chooses five significant stories across at least four topics, writes each as a short story with two fill-in blanks, adds simple explanations and source links, and prepares three extra links for the ending card.
+The workflow is set up for a **7:00 AM India time** daily run. Scheduled runs are currently paused until the free-tier API key is added. When enabled, GitHub Actions gathers recent English-language India headlines across politics and public life, business, everyday services, science and environment, sport, and culture. An AI editor researches the leads on the live web, chooses five significant stories across at least four topics, writes each as a short story with two fill-in blanks, adds simple explanations and source links, and prepares three extra links for the ending card.
 
 Before publishing, the workflow checks that there are five stories, two blanks in the right order, three distinct choices per blank, answers are not repeated in the headline or remaining story, correct dropdown positions are varied, and each story has two source links from separate domains returned by web search. It also checks that casualty figures are not used as numerical blanks. If an edition is incomplete or fails a check, the workflow stops and leaves the last published edition in place.
 
@@ -12,9 +12,11 @@ A successful edition is committed to the repository and published to GitHub Page
 
 ## One-time setup
 
-The story research and writing uses the OpenAI API. Create an API key, then add it to this repository as an Actions secret named **OPENAI_API_KEY** under **Settings → Secrets and variables → Actions**. Keep the key in GitHub’s secret field; never add it to a project file. API usage may incur charges, and any manual reruns make additional API requests.
+The story research uses Google **Gemini 2.5 Flash-Lite** with Google Search. Its free tier currently includes free text generation and up to 500 Search-grounded requests per day. Google may use free-tier prompts and responses to improve its products, so this workflow sends public news leads and no personal information. Free limits and terms can change.
 
-After the secret is saved, run the workflow once from the Actions page to publish the first automated edition. Future editions are scheduled for 7:00 AM India time.
+Create an API key in [Google AI Studio](https://aistudio.google.com/apikey), then add it in GitHub under **Settings → Secrets and variables → Actions → New repository secret**. Name it **GEMINI_API_KEY** and paste the key into the value field. Never put the key in a project file or send it in chat. Keep billing disabled if you want to avoid any possibility of charges beyond free usage.
+
+After the secret is saved, tell me and I can re-enable the 7:00 AM schedule. The workflow remains paused until then.
 
 ## Editorial rules built into the workflow
 
