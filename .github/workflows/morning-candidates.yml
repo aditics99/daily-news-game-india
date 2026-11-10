@@ -1,8 +1,7 @@
 name: Publish India daily news game
 
 on:
-  schedule:
-    - cron: "30 1 * * *"
+  # Scheduled runs paused until a free API is configured.
   workflow_dispatch:
 
 permissions:
