@@ -59,7 +59,7 @@ function markComplete() {
   dates.add(today);
   try { localStorage.setItem(progressKey, JSON.stringify([...dates].sort())); } catch { /* progress is optional */ }
 }
-function escapeHTML(value) {
+function stripSourceCitations(value) { return String(value).replace(/\s*\(\s*\[[^\]]+\]\(https?:\/\/[^)]+\)\s*\)/g, "").replace(/\s*\(https?:\/\/[^)]+\)/g, "").trim(); } function escapeHTML(value) {
   return String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 }
 function dateLabel() {
@@ -78,7 +78,7 @@ function render() {
   const answer = state.answers[state.index] || ""; const answer2 = state.secondAnswers[state.index] || "";
   const correct = state.revealed ? state.revealedCorrect === true : answer === current.answer && answer2 === current.answer2;
   const progress = edition.stories.map((_, i) => `<span class="progress-dot ${i < state.index || done ? "is-done" : i === state.index ? "is-current" : ""}" aria-label="Story ${i + 1}${i < state.index || done ? ", complete" : i === state.index ? ", current" : ""}"></span>`).join("");
-  const displayStory = escapeHTML(current.copy).replace(/\{\{([12])\}\}/g, (_match, number) => {
+  const displayStory = escapeHTML(current.copy.replace(/\s*\(\[[^\]]+\]\(https?:\/\/[^)]+\)\)/g, "")).replace(/\{\{([12])\}\}/g, (_match, number) => {
     const blankNumber = Number(number);
     const value = blankNumber === 1 ? answer : answer2;
     return state.revealed
@@ -106,7 +106,7 @@ function render() {
             ${state.revealed ? `
               <div class="feedback ${correct ? "is-right" : "is-not-right"}" aria-live="polite">
                 <p class="feedback-title">${correct ? "You got it." : "Here’s the missing piece."}</p>
-                <p>${escapeHTML(current.explanation)}</p>
+                <p>${escapeHTML(current.explanation.replace(/\s*\(\[[^\]]+\]\(https?:\/\/[^)]+\)\)/g, ""))}</p>
                 <div class="source-list"><p class="source-list-title">Sources</p>${(current.sources || [current.source]).map((source) => `<a class="source-link" href="${escapeHTML(source.url)}" target="_blank" rel="noopener noreferrer">${escapeHTML(source.label)} ↗</a>`).join("")}</div>
               </div>
               <button class="primary-button" type="button" data-next>${state.index === edition.stories.length - 1 ? "See my score" : "Next story"}<span>→</span></button>
@@ -157,7 +157,7 @@ function renderFinish(streak) {
     <p class="finish-kicker">YOU MADE IT THROUGH TODAY’S INDIA EDITION</p>
     <h2>${state.score}<span> / 5</span></h2>
     <p class="finish-copy">stories in your head now.<br><strong>That’s a ${streak}-day streak.</strong></p>
-    <section class="score-comparison" data-score-comparison aria-live="polite"><h3>How did you compare?</h3><p>Loading today’s scores…</p></section><div class="finish-recap"><h3>More interesting things today</h3><ul>${(edition.moreToday || []).map((item) => '<li><a href="' + escapeHTML(item.url) + '" target="_blank" rel="noopener noreferrer">' + escapeHTML(item.text) + '</a></li>').join("")}</ul></div>
+    <section class="score-comparison" data-score-comparison aria-live="polite"><h3>How did you compare?</h3><p>Loading today’s scores…</p></section><div class="finish-recap"><h3>More interesting things today</h3><ul>${(edition.moreToday || []).map((item) => '<li><a href="' + escapeHTML(item.url) + '" target="_blank" rel="noopener noreferrer">' + escapeHTML(item.text.replace(/\s*\(\[[^\]]+\]\(https?:\/\/[^)]+\)\)/g, "")) + '</a></li>').join("")}</ul></div>
     <div class="finish-actions"><button class="share-button" type="button" data-share>Share your score <span>↗</span></button><button class="replay-button" type="button" data-replay>Play again</button></div>
     <p class="share-feedback" data-share-feedback aria-live="polite"></p>
     <p class="streak-note">Your streak is saved on this device. Come back tomorrow to keep it going.</p>
