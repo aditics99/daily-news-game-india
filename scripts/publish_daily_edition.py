@@ -15,7 +15,7 @@ from zoneinfo import ZoneInfo
 
 IST = ZoneInfo("Asia/Kolkata")
 API_URL = "https://generativelanguage.googleapis.com/v1beta/models"
-MODEL = "gemini-2.5-flash-lite"
+MODEL = "gemini-3.5-flash-lite"
 CATEGORIES = ["Politics & public life", "Business & money", "Everyday India", "Science & environment", "Sport", "Culture & entertainment"]
 QUERIES = [
     ("Politics & public life", "India politics government parliament court policy"),
@@ -125,7 +125,7 @@ def api_response(prompt):
 
     request_body = {
         "contents": [{"parts": [{"text": prompt}]}],
-        "tools": [{"google_search": {}}],
+        
         "generationConfig": {"temperature": 0.2, "maxOutputTokens": 12000}
     }
     request = Request(API_URL + "/" + MODEL + ":generateContent", data=json.dumps(request_body).encode(), headers={"x-goog-api-key": key, "Content-Type": "application/json"}, method="POST")
@@ -150,15 +150,10 @@ def api_response(prompt):
     except json.JSONDecodeError as error:
         raise RuntimeError("The news-writing service returned unreadable structured content.") from error
 
-    grounding = candidate.get("groundingMetadata") or {}
-    searched = set()
-    for chunk in grounding.get("groundingChunks", []):
-        source = chunk.get("web") or {}
-        url = source.get("uri")
-        if url:
-            searched.add(canonical_url(url))
-    if not searched:
-        raise RuntimeError("Google Search returned no cited sources; refusing to publish without source verification.")
+            searched = {canonical_url(url) for url in re.findall(r'https://[^\s"]+', prompt)}
+        if not searched:
+            raise RuntimeError("News feed provided no source links; refusing to publish.")
+        
     return edition, searched
 
 
@@ -208,16 +203,16 @@ def validate_edition(edition, searched):
                 if re.search(r"\b(dead|died|death|killed|injured|casualties|fatalities)\b", sentence):
                     raise RuntimeError("Story " + str(index) + " uses a number beside a human casualty detail as a blank.")
         sources = story.get("sources")
-        if not isinstance(sources, list) or len(sources) < 2:
-            raise RuntimeError("Story " + str(index) + " needs at least two source links.")
-        domains = set()
+        if not isinstance(sources, list) or len(sources) < 1:
+            raise RuntimeError("Story " + str(index) + " needs at least one source link.")
+        
         for source in sources:
             url = source.get("url", "")
             if not url.startswith("https://") or canonical_url(url) not in searched:
                 raise RuntimeError("Story " + str(index) + " includes a link that was not returned by web search.")
-            domains.add(urlsplit(url).hostname)
-        if len(domains) < 2:
-            raise RuntimeError("Story " + str(index) + " needs two independent source domains.")
+                    
+
+                        
     if min(first_positions) < 1 or max(first_positions) > 5:
         raise RuntimeError("Correct answers are too concentrated in one dropdown position.")
     for extra in extras:
@@ -230,7 +225,7 @@ def validate_edition(edition, searched):
 def build_prompt(candidates, failures):
     today = datetime.now(timezone.utc).astimezone(IST).strftime("%A, %d %B %Y")
     payload = json.dumps(candidates, ensure_ascii=False)
-    return f"""You are the daily editor of a concise India news learning game. Prepare the complete edition for {today} using the candidate list below as a discovery and recency signal, then use live web search to verify current facts and obtain source links. You must research before drafting.
+    return f"""Prepare the {today} edition using only the India news candidates below. Use only facts included in each candidate title and description; do not add unsupported details. Choose five important stories across different topics. Use source URLs only from the candidates. The links open the original publishers. Do not use paid search tools or invent facts or links.
 
 Choose exactly five of the most significant, genuinely current India stories from the past day. Cover different parts of life in India: politics and public life, business and money, everyday services, science/environment, sport, culture/entertainment. Spread the five across at least four topic categories; use no more than two from one category. Do not choose a story solely because it is easy to quiz.
 
@@ -238,9 +233,9 @@ For each story: write a specific headline; write a natural, simple story of 2–
 
 Attribute allegations and changing estimates. Include specific people, places, dates, decisions, and amounts when they matter. A significant disaster may be covered; describe verified location and magnitude where relevant, and mention rescue, relief, or recovery work underway. Never make death, injury, casualty, or graphic-harm counts into a blank or score.
 
-Source every story with at least two independent links returned by your web searches, preferably original reporting or an official source plus independent reporting. Never invent a URL or claim. If a story cannot be verified from at least two sources, choose another one. Also provide three additional, brief “more interesting things today” links that are not among the five main stories and come from your web searches.
+Source each story with at least one relevant HTTPS URL from the candidate list. Use only links that support the story; never invent a URL or claim. Choose three additional moreToday links from other candidates, separate from the five main stories.
 
-The news RSS candidates below are headlines, publisher names, short snippets, timestamps, and topic tags. Search the web for each promising lead, open reliable coverage, and select based on public importance and cross-topic relevance. Do not simply rewrite the headline. RSS collection errors, if any: {failures}
+The candidates below contain current headlines, publisher names, short snippets, timestamps, topics, and article links. Use these as your only factual basis and source links; choose stories with enough detail to write accurately.
 
 Return only valid JSON with this shape: {{"stories":[{{"section":"...","headline":"...","copy":"...","answer":"...","options":["...","...","..."],"answer2":"...","options2":["...","...","..."],"explanation":"...","sources":[{{"label":"...","url":"https://..."}},{{"label":"...","url":"https://..."}}]}}],"moreToday":[{{"text":"...","url":"https://..."}},{{"text":"...","url":"https://..."}},{{"text":"...","url":"https://..."}}]}}. Each story must include exactly the named fields. Explain unfamiliar acronyms and institutions in plain language at first mention. Category must be one of: {', '.join(CATEGORIES)}.
 CANDIDATES:
