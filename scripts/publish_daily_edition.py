@@ -237,7 +237,7 @@ def fetch_candidates(now):
                 picked.append(item)
                 seen.add(item["url"])
                 count += 1
-                if count == 12:
+                if count == 10:
                     break
     for item in ranked:
         if item["url"] not in seen:
