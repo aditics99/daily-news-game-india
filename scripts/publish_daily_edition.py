@@ -24,7 +24,7 @@ TOPIC_PATTERNS = {
     "Business & money": [r"\bbusiness\b", r"\beconom", r"\bcompany\b", r"\bcompanies\b", r"\bcorporate\b", r"\bIPO\b", r"\bshare\b", r"\bshares\b", r"\boffering\b", r"\bmarket\b", r"\bstock\b", r"\bbank\b", r"\bfinance\b", r"\btax\b", r"\binflation\b", r"\bprice", r"\btrade\b", r"\binvest", r"\bindustry\b", r"\bearnings\b", r"\bprofit", r"\bauction\b"],
     "Everyday India": [r"\bmetro\b", r"\btrain\b", r"\brail", r"\bschool\b", r"\beducation\b", r"\bhealth\b", r"\bhospital\b", r"\bmedicine\b", r"\bwater\b", r"\bpower\b", r"\btraffic\b", r"\btransport\b", r"\bweather\b", r"\bcity\b", r"\bpension\b", r"\bration\b", r"\bfuel\b", r"\bpetrol\b"],
     "Science & environment": [r"\bscience\b", r"\btechnology\b", r"\btech\b", r"\bspace\b", r"\bisro\b", r"\bsatellite\b", r"\bclimate\b", r"\benvironment\b", r"\bpollution\b", r"\benergy\b", r"\bsolar\b", r"\bresearch\b", r"\bAI\b", r"\binnovation\b"],
-    "Sport": [r"\bsport", r"\bcricket\b", r"\bfootball\b", r"\bhockey\b", r"\btennis\b", r"\bbadminton\b", r"\bolympic", r"\bmatch\b", r"\bleague\b", r"\bworld cup\b", r"\bIPL\b", r"\bteam\b", r"\btournament\b", r"\bathlet", r"\bwicket\b", r"\bgoal\b", r"\bmedal\b", r"\bchess\b"],
+    "Sport": [r"\bsport", r"\bcricket\b", r"\bfootball\b", r"\bhockey\b", r"\btennis\b", r"\bbadminton\b", r"\bolympic", r"\bworld cup\b", r"\bIPL\b", r"\btournament\b", r"\bathlet", r"\bwicket\b", r"\bgoal\b", r"\bmedal\b", r"\bchess\b"],
     "Culture & entertainment": [r"\bfilm\b", r"\bmovie\b", r"\bactor", r"\bactress\b", r"\bcinema\b", r"\bmusic\b", r"\bsinger\b", r"\bconcert\b", r"\bbook\b", r"\bauthor\b", r"\bart\b", r"\btheatre\b", r"\bfestival\b", r"\bstreaming\b", r"\bBollywood\b", r"\bdance\b"],
 }
 
@@ -32,7 +32,7 @@ TOPIC_PATTERNS = {
 def infer_categories(title):
     matches = [section for section, patterns in TOPIC_PATTERNS.items()
                if any(re.search(pattern, title, re.I) for pattern in patterns)]
-    return matches or ["Everyday India"]
+    return matches
 
 
 INDIA_CONTEXT_PATTERN = re.compile(
@@ -214,6 +214,11 @@ def fetch_candidates(now):
                 data = json.loads(raw)
             except ValueError as error:
                 if "Please limit requests" in raw:
+                    if attempt < 3:
+                        pause = 12 * (2 ** attempt)
+                        print("GDELT is rate-limiting requests; retrying once the cooldown passes.")
+                        time.sleep(pause)
+                        continue
                     raise RuntimeError("GDELT rate limit: " + raw[:220]) from error
                 raise RuntimeError("GDELT returned unreadable article results: " + raw[:160]) from error
             break
@@ -252,16 +257,25 @@ def fetch_candidates(now):
         })
 
     ranked = sorted(grouped.values(), key=lambda item: (item["rank"], item["age"]))
+    # Interleave topics before fetching full articles so the 25-item prompt
+    # does not get filled by the first categories in the list.
     picked, seen = [], set()
-    for section in CATEGORIES:
-        count = 0
-        for item in ranked:
-            if section in item["categories"] and item["url"] not in seen:
-                picked.append(item)
-                seen.add(item["url"])
-                count += 1
-                if count == 10:
+    topic_queues = {
+        section: [item for item in ranked if section in item["categories"]]
+        for section in CATEGORIES
+    }
+    while len(picked) < 60:
+        added = False
+        for section in CATEGORIES:
+            next_item = next((item for item in topic_queues[section] if item["url"] not in seen), None)
+            if next_item:
+                picked.append(next_item)
+                seen.add(next_item["url"])
+                added = True
+                if len(picked) >= 60:
                     break
+        if not added:
+            break
     for item in ranked:
         if item["url"] not in seen:
             picked.append(item)
@@ -376,6 +390,9 @@ def validate_edition(edition, candidates):
         candidate_ids = story.get("candidateIds")
         if not isinstance(candidate_ids, list) or not candidate_ids or any(type(value) is not int or value not in candidate_by_id for value in candidate_ids):
             raise RuntimeError("Story " + str(index) + " must cite one or more numbered GDELT candidates.")
+        story_text = story["headline"] + " " + body
+        if not INDIA_CONTEXT_PATTERN.search(story_text):
+            raise RuntimeError("Story " + str(index) + " does not clearly connect the event to India.")
         supported_sections = {section for value in candidate_ids for section in candidate_by_id[value]["categories"]}
         if story["section"] not in supported_sections:
             raise RuntimeError("Story " + str(index) + " topic does not match its selected candidate.")
