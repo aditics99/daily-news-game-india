@@ -2,7 +2,6 @@
 """Build a sourced, validated India news game edition and prepare it for publishing."""
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
-from email.utils import parsedate_to_datetime
 from html import unescape
 from html.parser import HTMLParser
 from urllib.parse import quote_plus, urlsplit
@@ -12,7 +11,7 @@ import json
 import os
 import re
 import sys
-import xml.etree.ElementTree as ET
+import time
 from zoneinfo import ZoneInfo
 
 IST = ZoneInfo("Asia/Kolkata")
@@ -20,12 +19,12 @@ API_URL = "https://generativelanguage.googleapis.com/v1beta/models"
 MODEL = "gemini-3.5-flash-lite"
 CATEGORIES = ["Politics & public life", "Business & money", "Everyday India", "Science & environment", "Sport", "Culture & entertainment"]
 QUERIES = [
-    ("Politics & public life", "India politics government parliament court policy"),
-    ("Business & money", "India business economy finance companies markets"),
-    ("Everyday India", "India public services transport education health infrastructure"),
-    ("Science & environment", "India science technology environment climate space"),
-    ("Sport", "India sports cricket tournament results"),
-    ("Culture & entertainment", "India culture entertainment film music"),
+    ("Politics & public life", "sourcecountry:india sourcelang:english (government OR parliament OR election OR court OR minister OR policy)"),
+    ("Business & money", "sourcecountry:india sourcelang:english (business OR economy OR companies OR markets OR finance OR industry)"),
+    ("Everyday India", "sourcecountry:india sourcelang:english (transport OR education OR health OR infrastructure OR services OR prices)"),
+    ("Science & environment", "sourcecountry:india sourcelang:english (science OR technology OR environment OR climate OR space OR energy)"),
+    ("Sport", "sourcecountry:india sourcelang:english (India cricket OR sport OR tournament OR match OR athletics)"),
+    ("Culture & entertainment", "sourcecountry:india sourcelang:english (culture OR entertainment OR film OR music OR books)"),
 ]
 
 SCHEMA = {
@@ -53,11 +52,6 @@ SCHEMA = {
     "required": ["stories", "moreToday"],
     "additionalProperties": False
 }
-
-
-def local_text(node, name):
-    child = next((item for item in node if item.tag.rsplit("}", 1)[-1] == name), None)
-    return unescape("".join(child.itertext()).strip()) if child is not None else ""
 
 
 class ArticleContextParser(HTMLParser):
@@ -182,12 +176,11 @@ def enrich_candidates(items):
     enriched = []
     for item, detail in zip(items, details):
         item["article_detail"] = detail
-        item["evidence"] = "RSS headline: " + item["title"] + "\nRSS snippet: " + item["description"]
+        item["evidence"] = "Publisher headline: " + item["title"]
         if detail:
             item["evidence"] += "\nArticle page details: " + detail
         enough_article_detail = len(detail) >= 160
-        enough_rss_detail = len(item["description"]) >= 140
-        if (enough_article_detail or enough_rss_detail) and len(item["evidence"]) >= 220:
+        if enough_article_detail:
             enriched.append(item)
     return enriched
 
@@ -195,66 +188,72 @@ def enrich_candidates(items):
 def fetch_candidates(now):
     grouped = {}
     failures = []
+    last_request_at = 0.0
     for section, query in QUERIES:
-        url = "https://news.google.com/rss/search?q=" + quote_plus(query + " when:1d") + "&hl=en-IN&gl=IN&ceid=IN:en"
+        params = "query=" + quote_plus(query) + "&mode=artlist&maxrecords=75&timespan=1d&sort=datedesc&format=json"
+        url = "https://api.gdeltproject.org/api/v2/doc/doc?" + params
         try:
-            request = Request(url, headers={"User-Agent": "DailyNewsGameIndia/1.0 (public RSS reader)"})
-            with urlopen(request, timeout=25) as response:
-                root = ET.fromstring(response.read())
-            for item in root.iter():
-                if item.tag.rsplit("}", 1)[-1] != "item":
-                    continue
-                title, link, published = local_text(item, "title"), local_text(item, "link"), local_text(item, "pubDate")
-                if not title or not link:
+            wait_for = 5.1 - (time.monotonic() - last_request_at)
+            if last_request_at and wait_for > 0:
+                time.sleep(wait_for)
+            request = Request(url, headers={"User-Agent": "DailyNewsGameIndia/1.0 (+https://github.com/aditics99/daily-news-game-india)"})
+            last_request_at = time.monotonic()
+            with urlopen(request, timeout=30) as response:
+                data = json.loads(response.read().decode("utf-8", errors="replace"))
+            for article in data.get("articles", []):
+                title = re.sub(r"\s+", " ", str(article.get("title", "")).strip())
+                link = str(article.get("url", "")).strip()
+                domain = str(article.get("domain", "")).strip()
+                if not title or not link or urlsplit(link).scheme != "https":
                     continue
                 try:
-                    date = parsedate_to_datetime(published).astimezone(timezone.utc)
+                    date = datetime.strptime(str(article.get("seendate", "")), "%Y%m%dT%H%M%SZ").replace(tzinfo=timezone.utc)
                     age = max(0.0, (now - date).total_seconds() / 3600)
                 except (TypeError, ValueError):
                     date, age = now, 12.0
                 if age > 30:
                     continue
-                description = re.sub(r"<[^>]+>", " ", local_text(item, "description"))
-                description = re.sub(r"\s+", " ", unescape(description)).strip()[:500]
-                source = local_text(item, "source") or "News source"
-                key = re.sub(r"[^a-z0-9]+", " ", title.lower()).strip()
-                entry = grouped.setdefault(key, {"title": title.replace("|", "–"), "url": link, "source": source,
+                key = canonical_url(link) or re.sub(r"[^a-z0-9]+", " ", title.lower()).strip()
+                entry = grouped.setdefault(key, {
+                    "title": title.replace("|", "–"), "url": link, "source": domain or "News source",
                     "published": date.astimezone(IST).strftime("%Y-%m-%d %H:%M IST"), "age": age,
-                    "description": description, "categories": [], "hits": 0})
+                    "description": "", "categories": [], "hits": 0
+                })
                 if section not in entry["categories"]:
                     entry["categories"].append(section)
                 entry["hits"] += 1
                 if age < entry["age"]:
-                    entry.update({"url": link, "source": source, "published": date.astimezone(IST).strftime("%Y-%m-%d %H:%M IST"), "age": age, "description": description})
+                    entry.update({"title": title.replace("|", "–"), "url": link, "source": domain or "News source",
+                                  "published": date.astimezone(IST).strftime("%Y-%m-%d %H:%M IST"), "age": age})
         except Exception as error:
             failures.append(section + ": " + type(error).__name__)
+
     ranked = sorted(grouped.values(), key=lambda item: item["hits"] * 12 + max(0, 30 - item["age"]) / 3, reverse=True)
     picked, seen = [], set()
     for section, _query in QUERIES:
         count = 0
         for item in ranked:
-            if section in item["categories"] and item["title"] not in seen:
+            if section in item["categories"] and item["url"] not in seen:
                 picked.append(item)
-                seen.add(item["title"])
+                seen.add(item["url"])
                 count += 1
-                if count == 7:
+                if count == 12:
                     break
     for item in ranked:
-        if item["title"] not in seen:
+        if item["url"] not in seen:
             picked.append(item)
-            seen.add(item["title"])
-        if len(picked) >= 25:
+            seen.add(item["url"])
+        if len(picked) >= 60:
             break
-    raw_count = min(len(picked), 35)
-    picked = enrich_candidates(picked[:35])
-    print("Article detail check: " + str(len(picked)) + " of " + str(raw_count) + " shortlisted RSS leads had enough usable context.")
-    if len(picked) < 15:
-        raise RuntimeError("Only " + str(len(picked)) + " India leads had enough RSS/article detail; refusing to publish a thin edition. Feed status: " + ", ".join(failures))
+    raw_count = len(picked)
+    picked = enrich_candidates(picked[:60])
+    print("Article detail check: " + str(len(picked)) + " of " + str(raw_count) + " shortlisted GDELT leads had enough usable context.")
+    if len(picked) < 8:
+        raise RuntimeError("Only " + str(len(picked)) + " India leads had enough article detail; at least eight supported candidates are needed for five stories and three extra links. Feed status: " + ", ".join(failures))
     picked = picked[:25]
     for candidate_id, item in enumerate(picked, start=1):
         item["id"] = candidate_id
     return picked, failures
-
 
 def api_response(prompt):
     key = os.environ.get("GEMINI_API_KEY", "")
@@ -310,7 +309,7 @@ def validate_edition(edition, candidates):
     if not isinstance(stories, list):
         raise RuntimeError("The draft did not return a story list.")
     if len(stories) < 5:
-        raise RuntimeError("Only " + str(len(stories)) + " stories had enough RSS/article detail; refusing to publish a thin edition.")
+        raise RuntimeError("Only " + str(len(stories)) + " stories had enough GDELT/article detail; refusing to publish a thin edition.")
     if len(stories) > 5:
         raise RuntimeError("The draft must contain exactly five stories.")
     if not isinstance(extras, list) or len(extras) != 3:
@@ -350,9 +349,9 @@ def validate_edition(edition, candidates):
                     raise RuntimeError("Story " + str(index) + " uses a number beside a human casualty detail as a blank.")
         candidate_ids = story.get("candidateIds")
         if not isinstance(candidate_ids, list) or not candidate_ids or any(type(value) is not int or value not in candidate_by_id for value in candidate_ids):
-            raise RuntimeError("Story " + str(index) + " must cite one or more numbered RSS candidates.")
+            raise RuntimeError("Story " + str(index) + " must cite one or more numbered GDELT candidates.")
         if len(set(candidate_ids)) != len(candidate_ids) or any(value in used_candidate_ids for value in candidate_ids):
-            raise RuntimeError("Story " + str(index) + " reuses an RSS candidate already assigned to another story.")
+            raise RuntimeError("Story " + str(index) + " reuses an GDELT candidate already assigned to another story.")
         used_candidate_ids.update(candidate_ids)
         story["sources"] = [
             {"label": candidate_by_id[value]["source"], "url": candidate_by_id[value]["url"]}
@@ -361,21 +360,21 @@ def validate_edition(edition, candidates):
         story.pop("candidateIds", None)
         for source in story["sources"]:
             if canonical_url(source["url"]) not in allowed_source_urls:
-                raise RuntimeError("Story " + str(index) + " source did not come from the RSS candidate list.")
+                raise RuntimeError("Story " + str(index) + " source did not come from the GDELT candidate list.")
 
     if min(first_positions) < 1 or max(first_positions) > 5:
         raise RuntimeError("Correct answers are too concentrated in one dropdown position.")
     for extra in extras:
         candidate_id = extra.get("candidateId")
         if not extra.get("text") or type(candidate_id) is not int or candidate_id not in candidate_by_id:
-            raise RuntimeError("An ending-card item must use a numbered RSS candidate.")
+            raise RuntimeError("An ending-card item must use a numbered GDELT candidate.")
         if candidate_id in used_candidate_ids:
             raise RuntimeError("An ending-card item must use a different candidate from the five main stories.")
         used_candidate_ids.add(candidate_id)
         extra["url"] = candidate_by_id[candidate_id]["url"]
         extra.pop("candidateId", None)
         if canonical_url(extra["url"]) not in allowed_source_urls:
-            raise RuntimeError("An ending-card link did not come from the RSS candidate list.")
+            raise RuntimeError("An ending-card link did not come from the GDELT candidate list.")
 
     edition["date"] = datetime.now(timezone.utc).astimezone(IST).date().isoformat()
     return edition
@@ -398,7 +397,7 @@ Attribute allegations and changing estimates. Include specific people, places, d
 
 Use only candidates whose supplied evidence supports the key who/what/where and why of the story. Skip thin or vague leads: do not fill missing context from memory or guess what an article probably says. If fewer than five candidates can support complete, accurate stories, return fewer than five stories; the publishing check will keep the previous edition live rather than publish guessed copy. For each story, return candidateIds containing the number of the most relevant candidate or candidates used. Do not return URLs. Each candidate has an id number. For moreToday, return candidateId for a different relevant candidate not already used among the five stories. The script will attach the original URLs, so do not write or alter URLs.
 
-The candidates below have stable integer id values, publisher names, timestamps, topics, and evidence gathered from RSS snippets plus accessible article-page text or metadata. Cite them by id. Use only the supplied evidence; skip a story if it does not establish enough facts to explain what happened and why. Article pages that block access or provide too little detail are excluded. Do not infer missing facts from a headline. The script will add the original source links.
+The candidates below have stable integer id values, publisher names, timestamps, topics, and evidence gathered from GDELT snippets plus accessible article-page text or metadata. Cite them by id. Use only the supplied evidence; skip a story if it does not establish enough facts to explain what happened and why. Article pages that block access or provide too little detail are excluded. Do not infer missing facts from a headline. The script will add the original source links.
 
 Return only valid JSON with this shape: {{"stories":[{{"section":"...","headline":"...","copy":"...","answer":"...","options":["...","...","..."],"answer2":"...","options2":["...","...","..."],"explanation":"...","candidateIds":[1]}}],"moreToday":[{{"text":"...","candidateId":6}},{{"text":"...","candidateId":7}},{{"text":"...","candidateId":8}}]}}. Each story must include exactly the named fields. Explain unfamiliar acronyms and institutions in plain language at first mention. Category must be one of: {', '.join(CATEGORIES)}.
 PREVIOUS VALIDATION ISSUES: {json.dumps(failures)}. Fix each issue before returning valid JSON. CANDIDATES:
@@ -415,7 +414,7 @@ def main():
             edition = validate_edition(edition, candidates)
             break
         except RuntimeError as error:
-            if "had enough RSS/article detail" in str(error) or attempt == 2:
+            if "had enough GDELT/article detail" in str(error) or attempt == 2:
                 raise
             failures.append("Draft attempt " + str(attempt + 1) + " failed validation: " + str(error))
             prompt = build_prompt(candidates, failures)
