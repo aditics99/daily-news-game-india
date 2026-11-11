@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Build a sourced, validated India news game edition and prepare it for publishing."""
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 from html import unescape
+from html.parser import HTMLParser
 from urllib.parse import quote_plus, urlsplit
 from urllib.request import Request, urlopen
 from pathlib import Path
@@ -58,6 +60,134 @@ def local_text(node, name):
     return unescape("".join(child.itertext()).strip()) if child is not None else ""
 
 
+class ArticleContextParser(HTMLParser):
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.depth = 0
+        self.content_depths = []
+        self.skip_depths = []
+        self.paragraph_depth = None
+        self.paragraph = []
+        self.paragraphs = []
+        self.title_depth = None
+        self.title = []
+        self.metadata = []
+        self.jsonld_depth = None
+        self.jsonld = []
+        self.article_bodies = []
+
+    def handle_starttag(self, tag, attrs):
+        void_tags = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"}
+        is_void = tag in void_tags
+        self.depth += 1
+        attrs = dict(attrs)
+        classes = (attrs.get("class", "") + " " + attrs.get("id", "")).lower()
+        if tag in ("article", "main") or any(word in classes for word in ("article", "story", "content", "post-body")):
+            self.content_depths.append(self.depth)
+        if tag in ("script", "style", "nav", "footer", "header", "aside"):
+            self.skip_depths.append(self.depth)
+        if tag == "meta":
+            key = (attrs.get("property") or attrs.get("name") or "").lower()
+            if key in ("description", "og:description", "twitter:description") and attrs.get("content"):
+                self.metadata.append(attrs["content"].strip())
+        if tag == "title":
+            self.title_depth = self.depth
+            self.title = []
+        if tag == "script" and "ld+json" in attrs.get("type", "").lower():
+            self.jsonld_depth = self.depth
+            self.jsonld = []
+        if tag == "p" and self.content_depths and not self.skip_depths:
+            self.paragraph_depth = self.depth
+            self.paragraph = []
+        if is_void:
+            self.depth -= 1
+
+    def handle_data(self, data):
+        if self.jsonld_depth is not None:
+            self.jsonld.append(data)
+        elif self.title_depth is not None:
+            self.title.append(data)
+        elif self.paragraph_depth is not None and not self.skip_depths:
+            self.paragraph.append(data)
+
+    def handle_endtag(self, tag):
+        if tag == "p" and self.paragraph_depth == self.depth:
+            text = re.sub(r"\s+", " ", " ".join(self.paragraph)).strip()
+            if len(text) > 35:
+                self.paragraphs.append(text)
+            self.paragraph_depth = None
+        if tag == "title" and self.title_depth == self.depth:
+            self.metadata.append(" ".join(self.title).strip())
+            self.title_depth = None
+        if tag == "script" and self.jsonld_depth == self.depth:
+            try:
+                data = json.loads("".join(self.jsonld))
+                self._collect_jsonld(data)
+            except (ValueError, TypeError):
+                pass
+            self.jsonld_depth = None
+        self.content_depths = [level for level in self.content_depths if level != self.depth]
+        self.skip_depths = [level for level in self.skip_depths if level != self.depth]
+        self.depth = max(0, self.depth - 1)
+
+    def _collect_jsonld(self, value):
+        if isinstance(value, dict):
+            type_value = value.get("@type", [])
+            types = {type_value} if isinstance(type_value, str) else set(type_value) if isinstance(type_value, list) else set()
+            if types.intersection({"Article", "NewsArticle", "Report", "BlogPosting"}):
+                for key in ("articleBody", "description"):
+                    text = value.get(key)
+                    if isinstance(text, str) and text.strip():
+                        clean = re.sub(r"<[^>]+>", " ", text)
+                        clean = re.sub(r"\s+", " ", unescape(clean)).strip()
+                        if len(clean) > 80:
+                            self.article_bodies.append(clean)
+            for child in value.values():
+                if isinstance(child, (dict, list)):
+                    self._collect_jsonld(child)
+        elif isinstance(value, list):
+            for child in value:
+                self._collect_jsonld(child)
+
+    def context(self):
+        parts = self.article_bodies[:1] or self.paragraphs[:8]
+        if not parts:
+            parts = self.metadata[:2]
+        return re.sub(r"\s+", " ", " ".join(parts)).strip()[:1400]
+
+
+def fetch_article_context(url):
+    try:
+        request = Request(url, headers={
+            "User-Agent": "DailyNewsGameIndia/1.0 (+public news explainer; contact: project repository)",
+            "Accept": "text/html,application/xhtml+xml"
+        })
+        with urlopen(request, timeout=8) as response:
+            if "html" not in response.headers.get("Content-Type", "").lower():
+                return ""
+            parser = ArticleContextParser()
+            parser.feed(response.read(600000).decode("utf-8", errors="replace"))
+        return parser.context()
+    except Exception:
+        return ""
+
+
+def enrich_candidates(items):
+    with ThreadPoolExecutor(max_workers=6) as executor:
+        details = list(executor.map(lambda item: fetch_article_context(item["url"]), items))
+    enriched = []
+    for item, detail in zip(items, details):
+        item["article_detail"] = detail
+        item["evidence"] = "RSS headline: " + item["title"] + "\nRSS snippet: " + item["description"]
+        if detail:
+            item["evidence"] += "\nArticle page details: " + detail
+        enough_article_detail = len(detail) >= 160
+        enough_rss_detail = len(item["description"]) >= 140
+        if (enough_article_detail or enough_rss_detail) and len(item["evidence"]) >= 220:
+            enriched.append(item)
+    return enriched
+
+
 def fetch_candidates(now):
     grouped = {}
     failures = []
@@ -82,11 +212,6 @@ def fetch_candidates(now):
                     continue
                 description = re.sub(r"<[^>]+>", " ", local_text(item, "description"))
                 description = re.sub(r"\s+", " ", unescape(description)).strip()[:500]
-                # RSS headlines alone are too thin for a useful explainer. Keep only
-                # leads with a substantial article snippet; fail closed if the feed
-                # cannot provide enough reporting detail for five stories.
-                if len(description) < 140:
-                    continue
                 source = local_text(item, "source") or "News source"
                 key = re.sub(r"[^a-z0-9]+", " ", title.lower()).strip()
                 entry = grouped.setdefault(key, {"title": title.replace("|", "–"), "url": link, "source": source,
@@ -116,8 +241,11 @@ def fetch_candidates(now):
             seen.add(item["title"])
         if len(picked) >= 25:
             break
+    raw_count = min(len(picked), 35)
+    picked = enrich_candidates(picked[:35])
+    print("Article detail check: " + str(len(picked)) + " of " + str(raw_count) + " shortlisted RSS leads had enough usable context.")
     if len(picked) < 15:
-        raise RuntimeError("Only " + str(len(picked)) + " recent India leads were found; refusing to publish a thin edition. Feed status: " + ", ".join(failures))
+        raise RuntimeError("Only " + str(len(picked)) + " India leads had enough RSS/article detail; refusing to publish a thin edition. Feed status: " + ", ".join(failures))
     picked = picked[:25]
     for candidate_id, item in enumerate(picked, start=1):
         item["id"] = candidate_id
@@ -251,8 +379,12 @@ def validate_edition(edition, candidates):
 
 def build_prompt(candidates, failures):
     today = datetime.now(timezone.utc).astimezone(IST).strftime("%A, %d %B %Y")
-    payload = json.dumps(candidates, ensure_ascii=False)
-    return f"""Prepare the {today} edition using only the India news candidates below. Use only facts included in each candidate title and description; do not add unsupported details. Choose five important stories across different topics. Use only facts in the candidate titles and descriptions. The script will add the selected candidates’ source links. Do not use paid search tools or invent facts.
+    prompt_candidates = [{
+        "id": item["id"], "publisher": item["source"], "published": item["published"],
+        "topics": item["categories"], "evidence": item["evidence"]
+    } for item in candidates]
+    payload = json.dumps(prompt_candidates, ensure_ascii=False)
+    return f"""Prepare the {today} edition using only the India news candidates below. Use only facts included in each candidate's supplied evidence; do not add unsupported details. Choose five important stories across different topics. Use only facts in that evidence. The script will add the selected candidates’ source links. Do not use paid search tools or invent facts.
 
 Choose exactly five of the most significant, genuinely current India stories from the past day. Cover different parts of life in India: politics and public life, business and money, everyday services, science/environment, sport, culture/entertainment. Spread the five across at least four topic categories; use no more than two from one category. Do not choose a story solely because it is easy to quiz.
 
@@ -262,7 +394,7 @@ Attribute allegations and changing estimates. Include specific people, places, d
 
 Use only candidates whose title and snippet together support the key who/what/where and why of the story. Skip thin or vague leads: do not fill missing context from memory or guess what an article probably says. If fewer than five candidates can support complete, accurate stories, return fewer than five stories; the publishing check will keep the previous edition live rather than publish guessed copy. For each story, return candidateIds containing the number of the most relevant candidate or candidates used. Do not return URLs. Each candidate has an id number. For moreToday, return candidateId for a different relevant candidate not already used among the five stories. The script will attach the original URLs, so do not write or alter URLs.
 
-The candidates below have stable integer id values plus current headlines, publisher names, short snippets, timestamps, topics, and article links. Cite them by id. Use these as your only factual basis; choose stories with enough detail to write accurately.
+The candidates below have stable integer id values, publisher names, timestamps, topics, and evidence gathered from RSS snippets plus accessible article-page text or metadata. Cite them by id. Use only the supplied evidence; skip a story if it does not establish enough facts to explain what happened and why. Article pages that block access or provide too little detail are excluded. Do not infer missing facts from a headline. The script will add the original source links.
 
 Return only valid JSON with this shape: {{"stories":[{{"section":"...","headline":"...","copy":"...","answer":"...","options":["...","...","..."],"answer2":"...","options2":["...","...","..."],"explanation":"...","candidateIds":[1]}}],"moreToday":[{{"text":"...","candidateId":6}},{{"text":"...","candidateId":7}},{{"text":"...","candidateId":8}}]}}. Each story must include exactly the named fields. Explain unfamiliar acronyms and institutions in plain language at first mention. Category must be one of: {', '.join(CATEGORIES)}.
 PREVIOUS VALIDATION ISSUES: {json.dumps(failures)}. Fix each issue before returning valid JSON. CANDIDATES:
