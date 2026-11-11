@@ -82,6 +82,11 @@ def fetch_candidates(now):
                     continue
                 description = re.sub(r"<[^>]+>", " ", local_text(item, "description"))
                 description = re.sub(r"\s+", " ", unescape(description)).strip()[:500]
+                # RSS headlines alone are too thin for a useful explainer. Keep only
+                # leads with a substantial article snippet; fail closed if the feed
+                # cannot provide enough reporting detail for five stories.
+                if len(description) < 140:
+                    continue
                 source = local_text(item, "source") or "News source"
                 key = re.sub(r"[^a-z0-9]+", " ", title.lower()).strip()
                 entry = grouped.setdefault(key, {"title": title.replace("|", "–"), "url": link, "source": source,
@@ -191,7 +196,12 @@ def validate_edition(edition, candidates):
         for n, answer, options in ((1, story["answer"], story.get("options")), (2, story["answer2"], story.get("options2"))):
             if not isinstance(options, list) or len(options) != 3 or len(set(options)) != 3 or options.count(answer) != 1:
                 raise RuntimeError("Story " + str(index) + " blank " + str(n) + " needs three different choices and one correct answer.")
-            first_positions[options.index(answer)] += 1
+            # Place correct answers in the least-used position so ordering stays
+            # balanced even when the model repeatedly returns the answer first.
+            position = first_positions.index(min(first_positions))
+            distractors = [option for option in options if option != answer]
+            story["options" if n == 1 else "options2"] = distractors[:position] + [answer] + distractors[position:]
+            first_positions[position] += 1
             if contains_answer(body, answer) or contains_answer(story["headline"], answer):
                 raise RuntimeError("Story " + str(index) + " gives away blank " + str(n) + " in its headline or remaining copy.")
             if re.search(r"\b(?:is|are|was|were)\b[^.!?]{0,100},\s*not\b", story["copy"] + " " + story["explanation"], re.I):
@@ -246,7 +256,7 @@ For each story: write a specific headline; write a natural, simple story of 2–
 
 Attribute allegations and changing estimates. Include specific people, places, dates, decisions, and amounts when they matter. A significant disaster may be covered; describe verified location and magnitude where relevant, and mention rescue, relief, or recovery work underway. Never make death, injury, casualty, or graphic-harm counts into a blank or score.
 
-For each story, return candidateIds containing the number of the most relevant candidate or candidates used. Do not return URLs. Each candidate has an id number. For moreToday, return candidateId for a different relevant candidate not already used among the five stories. The script will attach the original URLs, so do not write or alter URLs.
+Use only candidates whose title and snippet together support the key who/what/where and why of the story. Skip thin or vague leads: do not fill missing context from memory or guess what an article probably says. If fewer than five candidates can support complete, accurate stories, return fewer than five stories; the publishing check will keep the previous edition live rather than publish guessed copy. For each story, return candidateIds containing the number of the most relevant candidate or candidates used. Do not return URLs. Each candidate has an id number. For moreToday, return candidateId for a different relevant candidate not already used among the five stories. The script will attach the original URLs, so do not write or alter URLs.
 
 The candidates below have stable integer id values plus current headlines, publisher names, short snippets, timestamps, topics, and article links. Cite them by id. Use these as your only factual basis; choose stories with enough detail to write accurately.
 
