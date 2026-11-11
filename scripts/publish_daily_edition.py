@@ -6,6 +6,7 @@ from html import unescape
 from html.parser import HTMLParser
 from urllib.parse import quote_plus, urlsplit
 from urllib.request import Request, urlopen
+from urllib.error import HTTPError
 from pathlib import Path
 import json
 import os
@@ -18,14 +19,20 @@ IST = ZoneInfo("Asia/Kolkata")
 API_URL = "https://generativelanguage.googleapis.com/v1beta/models"
 MODEL = "gemini-3.5-flash-lite"
 CATEGORIES = ["Politics & public life", "Business & money", "Everyday India", "Science & environment", "Sport", "Culture & entertainment"]
-QUERIES = [
-    ("Politics & public life", "sourcecountry:india sourcelang:english (government OR parliament OR election OR court OR minister OR policy)"),
-    ("Business & money", "sourcecountry:india sourcelang:english (business OR economy OR companies OR markets OR finance OR industry)"),
-    ("Everyday India", "sourcecountry:india sourcelang:english (transport OR education OR health OR infrastructure OR services OR prices)"),
-    ("Science & environment", "sourcecountry:india sourcelang:english (science OR technology OR environment OR climate OR space OR energy)"),
-    ("Sport", "sourcecountry:india sourcelang:english (India cricket OR sport OR tournament OR match OR athletics)"),
-    ("Culture & entertainment", "sourcecountry:india sourcelang:english (culture OR entertainment OR film OR music OR books)"),
-]
+TOPIC_PATTERNS = {
+    "Politics & public life": [r"\bpolitic", r"\bparliament\b", r"\belection", r"\bminister\b", r"\bgovernment\b", r"\bcourt\b", r"\bbill\b", r"\bpolicy\b", r"\bmodi\b", r"\bbjp\b", r"\bcongress\b", r"\bassembly\b", r"\bvote\b", r"\bpoll\b"],
+    "Business & money": [r"\bbusiness\b", r"\beconom", r"\bcompany\b", r"\bcompanies\b", r"\bmarket\b", r"\bstock\b", r"\bbank\b", r"\bfinance\b", r"\btax\b", r"\binflation\b", r"\bprice", r"\btrade\b", r"\binvest", r"\bindustry\b", r"\bauction\b"],
+    "Everyday India": [r"\bmetro\b", r"\btrain\b", r"\brail", r"\bschool\b", r"\beducation\b", r"\bhealth\b", r"\bhospital\b", r"\bmedicine\b", r"\bwater\b", r"\bpower\b", r"\btraffic\b", r"\btransport\b", r"\bweather\b", r"\bcity\b", r"\bpension\b", r"\bration\b", r"\bfuel\b", r"\bpetrol\b"],
+    "Science & environment": [r"\bscience\b", r"\btechnology\b", r"\btech\b", r"\bspace\b", r"\bisro\b", r"\bsatellite\b", r"\bclimate\b", r"\benvironment\b", r"\bpollution\b", r"\benergy\b", r"\bsolar\b", r"\bresearch\b", r"\bAI\b", r"\binnovation\b"],
+    "Sport": [r"\bsport", r"\bcricket\b", r"\bfootball\b", r"\bhockey\b", r"\btennis\b", r"\bbadminton\b", r"\bolympic", r"\bmatch\b", r"\bleague\b", r"\bworld cup\b", r"\bIPL\b", r"\bteam\b", r"\btournament\b", r"\bathlet", r"\bwicket\b", r"\bgoal\b", r"\bmedal\b", r"\bchess\b"],
+    "Culture & entertainment": [r"\bfilm\b", r"\bmovie\b", r"\bactor", r"\bactress\b", r"\bcinema\b", r"\bmusic\b", r"\bsinger\b", r"\bconcert\b", r"\bbook\b", r"\bauthor\b", r"\bart\b", r"\btheatre\b", r"\bfestival\b", r"\bstreaming\b", r"\bBollywood\b", r"\bdance\b"],
+}
+
+
+def infer_categories(title):
+    matches = [section for section, patterns in TOPIC_PATTERNS.items()
+               if any(re.search(pattern, title, re.I) for pattern in patterns)]
+    return matches or ["Everyday India"]
 
 SCHEMA = {
     "type": "object",
@@ -186,51 +193,60 @@ def enrich_candidates(items):
 
 
 def fetch_candidates(now):
-    grouped = {}
     failures = []
-    last_request_at = 0.0
-    for section, query in QUERIES:
-        params = "query=" + quote_plus(query) + "&mode=artlist&maxrecords=75&timespan=1d&sort=datedesc&format=json"
-        url = "https://api.gdeltproject.org/api/v2/doc/doc?" + params
+    query = "sourcecountry:india sourcelang:english"
+    params = "query=" + quote_plus(query) + "&mode=artlist&maxrecords=250&timespan=1d&sort=hybridrel&format=json"
+    url = "https://api.gdeltproject.org/api/v2/doc/doc?" + params
+    data = None
+    for attempt in range(4):
+        request = Request(url, headers={"User-Agent": "DailyNewsGameIndia/1.0 (+https://github.com/aditics99/daily-news-game-india)"})
         try:
-            wait_for = 5.1 - (time.monotonic() - last_request_at)
-            if last_request_at and wait_for > 0:
-                time.sleep(wait_for)
-            request = Request(url, headers={"User-Agent": "DailyNewsGameIndia/1.0 (+https://github.com/aditics99/daily-news-game-india)"})
-            last_request_at = time.monotonic()
-            with urlopen(request, timeout=30) as response:
-                data = json.loads(response.read().decode("utf-8", errors="replace"))
-            for article in data.get("articles", []):
-                title = re.sub(r"\s+", " ", str(article.get("title", "")).strip())
-                link = str(article.get("url", "")).strip()
-                domain = str(article.get("domain", "")).strip()
-                if not title or not link or urlsplit(link).scheme != "https":
-                    continue
-                try:
-                    date = datetime.strptime(str(article.get("seendate", "")), "%Y%m%dT%H%M%SZ").replace(tzinfo=timezone.utc)
-                    age = max(0.0, (now - date).total_seconds() / 3600)
-                except (TypeError, ValueError):
-                    date, age = now, 12.0
-                if age > 30:
-                    continue
-                key = canonical_url(link) or re.sub(r"[^a-z0-9]+", " ", title.lower()).strip()
-                entry = grouped.setdefault(key, {
-                    "title": title.replace("|", "–"), "url": link, "source": domain or "News source",
-                    "published": date.astimezone(IST).strftime("%Y-%m-%d %H:%M IST"), "age": age,
-                    "description": "", "categories": [], "hits": 0
-                })
-                if section not in entry["categories"]:
-                    entry["categories"].append(section)
-                entry["hits"] += 1
-                if age < entry["age"]:
-                    entry.update({"title": title.replace("|", "–"), "url": link, "source": domain or "News source",
-                                  "published": date.astimezone(IST).strftime("%Y-%m-%d %H:%M IST"), "age": age})
+            with urlopen(request, timeout=45) as response:
+                raw = response.read().decode("utf-8", errors="replace")
+            try:
+                data = json.loads(raw)
+            except ValueError as error:
+                if "Please limit requests" in raw:
+                    raise RuntimeError("GDELT rate limit: " + raw[:220]) from error
+                raise RuntimeError("GDELT returned unreadable article results: " + raw[:160]) from error
+            break
+        except HTTPError as error:
+            detail = error.read().decode("utf-8", errors="replace")[:220]
+            if error.code == 429 and attempt < 3:
+                pause = 12 * (2 ** attempt)
+                print("GDELT is rate-limiting requests; retrying once the cooldown passes.")
+                time.sleep(pause)
+                continue
+            failures.append("GDELT HTTP " + str(error.code) + (": " + detail if detail else ""))
+            break
         except Exception as error:
-            failures.append(section + ": " + type(error).__name__)
+            failures.append("GDELT: " + str(error)[:220])
+            break
 
-    ranked = sorted(grouped.values(), key=lambda item: item["hits"] * 12 + max(0, 30 - item["age"]) / 3, reverse=True)
+    grouped = {}
+    for order, article in enumerate((data or {}).get("articles", [])):
+        title = re.sub(r"\s+", " ", str(article.get("title", "")).strip())
+        link = str(article.get("url", "")).strip()
+        domain = str(article.get("domain", "")).strip()
+        if not title or not link or urlsplit(link).scheme != "https":
+            continue
+        try:
+            date = datetime.strptime(str(article.get("seendate", "")), "%Y%m%dT%H%M%SZ").replace(tzinfo=timezone.utc)
+            age = max(0.0, (now - date).total_seconds() / 3600)
+        except (TypeError, ValueError):
+            continue
+        if age > 30:
+            continue
+        key = canonical_url(link) or re.sub(r"[^a-z0-9]+", " ", title.lower()).strip()
+        grouped.setdefault(key, {
+            "title": title.replace("|", "–"), "url": link, "source": domain or "News source",
+            "published": date.astimezone(IST).strftime("%Y-%m-%d %H:%M IST"), "age": age,
+            "description": "", "categories": infer_categories(title), "hits": 1, "rank": order
+        })
+
+    ranked = sorted(grouped.values(), key=lambda item: (item["rank"], item["age"]))
     picked, seen = [], set()
-    for section, _query in QUERIES:
+    for section in CATEGORIES:
         count = 0
         for item in ranked:
             if section in item["categories"] and item["url"] not in seen:
@@ -245,6 +261,7 @@ def fetch_candidates(now):
             seen.add(item["url"])
         if len(picked) >= 60:
             break
+
     raw_count = len(picked)
     picked = enrich_candidates(picked[:60])
     print("Article detail check: " + str(len(picked)) + " of " + str(raw_count) + " shortlisted GDELT leads had enough usable context.")
