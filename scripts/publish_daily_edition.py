@@ -21,7 +21,7 @@ MODEL = "gemini-3.5-flash-lite"
 CATEGORIES = ["Politics & public life", "Business & money", "Everyday India", "Science & environment", "Sport", "Culture & entertainment"]
 TOPIC_PATTERNS = {
     "Politics & public life": [r"\bpolitic", r"\bparliament\b", r"\belection", r"\bminister\b", r"\bgovernment\b", r"\bcourt\b", r"\bbill\b", r"\bpolicy\b", r"\bmodi\b", r"\bbjp\b", r"\bcongress\b", r"\bassembly\b", r"\bvote\b", r"\bpoll\b"],
-    "Business & money": [r"\bbusiness\b", r"\beconom", r"\bcompany\b", r"\bcompanies\b", r"\bmarket\b", r"\bstock\b", r"\bbank\b", r"\bfinance\b", r"\btax\b", r"\binflation\b", r"\bprice", r"\btrade\b", r"\binvest", r"\bindustry\b", r"\bauction\b"],
+    "Business & money": [r"\bbusiness\b", r"\beconom", r"\bcompany\b", r"\bcompanies\b", r"\bcorporate\b", r"\bIPO\b", r"\bshare\b", r"\bshares\b", r"\boffering\b", r"\bmarket\b", r"\bstock\b", r"\bbank\b", r"\bfinance\b", r"\btax\b", r"\binflation\b", r"\bprice", r"\btrade\b", r"\binvest", r"\bindustry\b", r"\bearnings\b", r"\bprofit", r"\bauction\b"],
     "Everyday India": [r"\bmetro\b", r"\btrain\b", r"\brail", r"\bschool\b", r"\beducation\b", r"\bhealth\b", r"\bhospital\b", r"\bmedicine\b", r"\bwater\b", r"\bpower\b", r"\btraffic\b", r"\btransport\b", r"\bweather\b", r"\bcity\b", r"\bpension\b", r"\bration\b", r"\bfuel\b", r"\bpetrol\b"],
     "Science & environment": [r"\bscience\b", r"\btechnology\b", r"\btech\b", r"\bspace\b", r"\bisro\b", r"\bsatellite\b", r"\bclimate\b", r"\benvironment\b", r"\bpollution\b", r"\benergy\b", r"\bsolar\b", r"\bresearch\b", r"\bAI\b", r"\binnovation\b"],
     "Sport": [r"\bsport", r"\bcricket\b", r"\bfootball\b", r"\bhockey\b", r"\btennis\b", r"\bbadminton\b", r"\bolympic", r"\bmatch\b", r"\bleague\b", r"\bworld cup\b", r"\bIPL\b", r"\bteam\b", r"\btournament\b", r"\bathlet", r"\bwicket\b", r"\bgoal\b", r"\bmedal\b", r"\bchess\b"],
@@ -33,6 +33,12 @@ def infer_categories(title):
     matches = [section for section, patterns in TOPIC_PATTERNS.items()
                if any(re.search(pattern, title, re.I) for pattern in patterns)]
     return matches or ["Everyday India"]
+
+
+INDIA_CONTEXT_PATTERN = re.compile(
+    r"\b(?:India|Indian|Bharat|New Delhi|Delhi|Mumbai|Bengaluru|Bangalore|Kolkata|Calcutta|Chennai|Madras|Hyderabad|Pune|Ahmedabad|Jaipur|Lucknow|Patna|Bhopal|Guwahati|Kochi|Thiruvananthapuram|Chandigarh|Srinagar|Jammu|Maharashtra|Gujarat|Rajasthan|Punjab|Haryana|Bihar|Odisha|Assam|Kerala|Karnataka|Tamil Nadu|Telangana|Andhra Pradesh|Uttar Pradesh|Madhya Pradesh|West Bengal|Chhattisgarh|Jharkhand|Uttarakhand|Himachal Pradesh|Goa|Manipur|Meghalaya|Mizoram|Nagaland|Tripura|Sikkim|Arunachal Pradesh|Lok Sabha|Rajya Sabha|RBI|ISRO|DRDO|Election Commission|Supreme Court of India|Reserve Bank of India|Modi|BJP|Congress|rupee|Gokul|Maruti)\b",
+    re.I,
+)
 
 SCHEMA = {
     "type": "object",
@@ -187,7 +193,8 @@ def enrich_candidates(items):
         if detail:
             item["evidence"] += "\nArticle page details: " + detail
         enough_article_detail = len(detail) >= 160
-        if enough_article_detail:
+        india_context = item["title"] + " " + detail[:900]
+        if enough_article_detail and INDIA_CONTEXT_PATTERN.search(india_context):
             enriched.append(item)
     return enriched
 
@@ -346,6 +353,8 @@ def validate_edition(edition, candidates):
             raise RuntimeError("Story " + str(index) + " must contain two blanks in order.")
         body = story["copy"].replace("{{1}}", " ").replace("{{2}}", " ")
         for n, answer, options in ((1, story["answer"], story.get("options")), (2, story["answer2"], story.get("options2"))):
+            if any(re.search(r"\d", str(option)) for option in (options or [])):
+                raise RuntimeError("Story " + str(index) + " blank " + str(n) + " uses a numeric answer choice.")
             if not isinstance(options, list) or len(options) != 3 or len(set(options)) != 3 or options.count(answer) != 1:
                 raise RuntimeError("Story " + str(index) + " blank " + str(n) + " needs three different choices and one correct answer.")
             # Place correct answers in the least-used position so ordering stays
@@ -367,6 +376,9 @@ def validate_edition(edition, candidates):
         candidate_ids = story.get("candidateIds")
         if not isinstance(candidate_ids, list) or not candidate_ids or any(type(value) is not int or value not in candidate_by_id for value in candidate_ids):
             raise RuntimeError("Story " + str(index) + " must cite one or more numbered GDELT candidates.")
+        supported_sections = {section for value in candidate_ids for section in candidate_by_id[value]["categories"]}
+        if story["section"] not in supported_sections:
+            raise RuntimeError("Story " + str(index) + " topic does not match its selected candidate.")
         if len(set(candidate_ids)) != len(candidate_ids) or any(value in used_candidate_ids for value in candidate_ids):
             raise RuntimeError("Story " + str(index) + " reuses an GDELT candidate already assigned to another story.")
         used_candidate_ids.update(candidate_ids)
@@ -406,9 +418,9 @@ def build_prompt(candidates, failures):
     payload = json.dumps(prompt_candidates, ensure_ascii=False)
     return f"""Prepare the {today} edition using only the India news candidates below. Use only facts included in each candidate's supplied evidence; do not add unsupported details. Choose five important stories across different topics. Use only facts in that evidence. The script will add the selected candidates’ source links. Do not use paid search tools or invent facts.
 
-Choose exactly five of the most significant, genuinely current India stories from the past day. Cover different parts of life in India: politics and public life, business and money, everyday services, science/environment, sport, culture/entertainment. Spread the five across at least four topic categories; use no more than two from one category. Do not choose a story solely because it is easy to quiz.
+Choose exactly five of the most significant, genuinely current stories about India from the past day. A publisher being based in India does not make an unrelated foreign story an India story; include an international event only when the supplied article explains its direct effect on India. Cover different parts of life in India: politics and public life, business and money, everyday services, science/environment, sport, culture/entertainment. Spread the five across at least four topic categories; use no more than two from one category. Do not choose a story solely because it is easy to quiz.
 
-For each story: write a specific headline; write a natural, simple story of 2–4 short sentences with the literal marker strings "{{{{1}}}}" and "{{{{2}}}}" each appearing exactly once, in that order, as the blanks. Do not use underscores, unlabeled blanks, or other placeholder formats; choose useful facts or connections rather than arbitrary trivia; give each blank three distinct, plausible choices and one correct answer; vary correct dropdown positions across the edition; add a conversational explanation that gives useful context and a real-life example where one clarifies an unfamiliar concept. Do not reveal either answer in the headline or elsewhere in the unblanked story. Avoid sentences which explain a term in another sentence and then ask for that same term. Avoid the wording pattern “X, not Y.”
+For each story: write a specific headline; write a natural, simple story of 2–4 short sentences with the literal marker strings "{{{{1}}}}" and "{{{{2}}}}" each appearing exactly once, in that order, as the blanks. Do not use underscores, unlabeled blanks, or other placeholder formats; choose useful facts or connections rather than arbitrary trivia; never make money amounts, votes, shares, percentages, counts, or other numeric totals into blanks; give each blank three distinct, plausible choices and one correct answer; vary correct dropdown positions across the edition; add a conversational explanation that gives useful context and a real-life example where one clarifies an unfamiliar concept. Do not reveal either answer in the headline or elsewhere in the unblanked story. Avoid sentences which explain a term in another sentence and then ask for that same term. Avoid the wording pattern “X, not Y.”
 
 Attribute allegations and changing estimates. Include specific people, places, dates, decisions, and amounts when they matter. A significant disaster may be covered; describe verified location and magnitude where relevant, and mention rescue, relief, or recovery work underway. Never make death, injury, casualty, or graphic-harm counts into a blank or score.
 
