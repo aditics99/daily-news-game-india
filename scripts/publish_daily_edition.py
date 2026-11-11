@@ -13,12 +13,22 @@ import os
 import re
 import sys
 import time
+import xml.etree.ElementTree as ET
+from email.utils import parsedate_to_datetime
 from zoneinfo import ZoneInfo
 
 IST = ZoneInfo("Asia/Kolkata")
 API_URL = "https://generativelanguage.googleapis.com/v1beta/models"
 MODEL = "gemini-3.5-flash-lite"
 CATEGORIES = ["Politics & public life", "Business & money", "Everyday India", "Science & environment", "Sport", "Culture & entertainment"]
+INDIAN_PUBLISHER_HOSTS = (
+    "thehindu.com", "timesofindia.indiatimes.com", "indianexpress.com",
+    "hindustantimes.com", "ndtv.com", "livemint.com", "business-standard.com",
+    "economictimes.indiatimes.com", "moneycontrol.com", "news18.com",
+    "theprint.in", "scroll.in", "tribuneindia.com", "deccanherald.com",
+    "indiatoday.in", "ptinews.com", "aninews.in", "newindianexpress.com",
+    "financialexpress.com", "telegraphindia.com", "deccanchronicle.com",
+)
 TOPIC_PATTERNS = {
     "Politics & public life": [r"\bpolitic", r"\bparliament\b", r"\belection", r"\bminister\b", r"\bgovernment\b", r"\bcourt\b", r"\bbill\b", r"\bpolicy\b", r"\bmodi\b", r"\bbjp\b", r"\bcongress\b", r"\bassembly\b", r"\bvote\b", r"\bpoll\b"],
     "Business & money": [r"\bbusiness\b", r"\beconom", r"\bcompany\b", r"\bcompanies\b", r"\bcorporate\b", r"\bIPO\b", r"\bshare\b", r"\bshares\b", r"\boffering\b", r"\bmarket\b", r"\bstock\b", r"\bbank\b", r"\bfinance\b", r"\btax\b", r"\binflation\b", r"\bprice", r"\btrade\b", r"\binvest", r"\bindustry\b", r"\bearnings\b", r"\bprofit", r"\bauction\b"],
@@ -33,6 +43,14 @@ def infer_categories(title):
     matches = [section for section, patterns in TOPIC_PATTERNS.items()
                if any(re.search(pattern, title, re.I) for pattern in patterns)]
     return matches
+
+
+def is_indian_publisher(domain):
+    domain = (domain or "").lower().removeprefix("www.")
+    return domain.endswith(".in") or any(
+        domain == host or domain.endswith("." + host)
+        for host in INDIAN_PUBLISHER_HOSTS
+    )
 
 
 INDIA_CONTEXT_PATTERN = re.compile(
@@ -236,6 +254,67 @@ def fetch_candidates(now):
             break
 
     grouped = {}
+    # DOC search may be rate-limited independently of this scheduled job.
+    # GDELT also publishes its Article List as a public RSS feed. Use that
+    # rolling feed as a discovery fallback; article-page checks below still
+    # decide whether a lead contains enough evidence to use.
+    if not data or not data.get("articles"):
+        try:
+            feed_request = Request(
+                "https://data.gdeltproject.org/gdeltv3/gal/feed.rss",
+                headers={"User-Agent": "DailyNewsGameIndia/1.0 (+https://github.com/aditics99/daily-news-game-india)"},
+            )
+            with urlopen(feed_request, timeout=45) as response:
+                feed_root = ET.fromstring(response.read())
+
+            feed_articles = []
+            for order, node in enumerate(feed_root.iter()):
+                if node.tag.rsplit("}", 1)[-1].lower() != "item":
+                    continue
+                fields = {
+                    child.tag.rsplit("}", 1)[-1].lower(): (child.text or "").strip()
+                    for child in list(node)
+                }
+                title = re.sub(r"\s+", " ", fields.get("title", "")).strip()
+                link = fields.get("link", "").strip()
+                published = fields.get("pubdate", "")
+                if not title or not link or urlsplit(link).scheme != "https" or not published:
+                    continue
+                try:
+                    date = parsedate_to_datetime(published)
+                    if date.tzinfo is None:
+                        date = date.replace(tzinfo=timezone.utc)
+                    date = date.astimezone(timezone.utc)
+                except (TypeError, ValueError, OverflowError):
+                    continue
+                letters = [char for char in title if char.isalpha()]
+                if not letters or sum(char.isascii() for char in letters) / len(letters) < 0.85:
+                    continue
+                feed_articles.append({
+                    "title": title,
+                    "url": link,
+                    "domain": urlsplit(link).hostname or "",
+                    "seendate": date.strftime("%Y%m%dT%H%M%SZ"),
+                    # Prefer Indian outlets and titles with explicit India
+                    # context before the 60-page detail check. The page text
+                    # still has to pass the existing India relevance gate.
+                    "_feed_rank": order - (
+                        10000
+                        if is_indian_publisher(urlsplit(link).hostname)
+                        or INDIA_CONTEXT_PATTERN.search(title)
+                        else 0
+                    ),
+                })
+
+            if feed_articles:
+                data = {"articles": feed_articles}
+                failures.append("DOC search unavailable; used GDELT Article List RSS fallback.")
+                print("GDELT DOC search was unavailable; using its public Article List feed.")
+            else:
+                failures.append("GDELT Article List RSS fallback returned no usable leads.")
+        except Exception as error:
+            failures.append("GDELT Article List RSS fallback: " + str(error)[:180])
+
     for order, article in enumerate((data or {}).get("articles", [])):
         title = re.sub(r"\s+", " ", str(article.get("title", "")).strip())
         link = str(article.get("url", "")).strip()
@@ -253,7 +332,7 @@ def fetch_candidates(now):
         grouped.setdefault(key, {
             "title": title.replace("|", "–"), "url": link, "source": domain or "News source",
             "published": date.astimezone(IST).strftime("%Y-%m-%d %H:%M IST"), "age": age,
-            "description": "", "categories": infer_categories(title), "hits": 1, "rank": order
+            "description": "", "categories": infer_categories(title), "hits": 1, "rank": article.get("_feed_rank", order)
         })
 
     ranked = sorted(grouped.values(), key=lambda item: (item["rank"], item["age"]))
