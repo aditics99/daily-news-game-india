@@ -175,7 +175,11 @@ def contains_answer(text, answer):
 def validate_edition(edition, candidates):
     stories = edition.get("stories")
     extras = edition.get("moreToday")
-    if not isinstance(stories, list) or len(stories) != 5:
+    if not isinstance(stories, list):
+        raise RuntimeError("The draft did not return a story list.")
+    if len(stories) < 5:
+        raise RuntimeError("Only " + str(len(stories)) + " stories had enough RSS detail; refusing to publish a thin edition.")
+    if len(stories) > 5:
         raise RuntimeError("The draft must contain exactly five stories.")
     if not isinstance(extras, list) or len(extras) != 3:
         raise RuntimeError("The ending card needs three verified extra stories.")
@@ -275,7 +279,7 @@ def main():
             edition = validate_edition(edition, candidates)
             break
         except RuntimeError as error:
-            if attempt == 2:
+            if "had enough RSS detail" in str(error) or attempt == 2:
                 raise
             failures.append("Draft attempt " + str(attempt + 1) + " failed validation: " + str(error))
             prompt = build_prompt(candidates, failures)
