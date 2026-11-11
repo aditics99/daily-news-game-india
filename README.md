@@ -6,15 +6,15 @@ A quick daily news game that helps readers keep up with the details that matter.
 
 GitHub Actions is scheduled to run at **7:00 AM India time**. It gathers recent English-language India news from public Google News RSS feeds across politics and public life, business, everyday services, science and environment, sport, and culture. It ranks the leads for recency and topic coverage, then asks Gemini Flash-Lite to choose five stories and draft each as a short, simple story with two blanks, a plain-language explanation, and three extra links for the ending card.
 
-The AI returns the numbered RSS candidates it used, rather than writing URLs. The publishing script attaches the original candidate links and checks that every selected ID maps to a feed item. The workflow does not use paid search grounding. Gemini text generation is still subject to the current model availability, account quota, and Google’s terms. Keep billing disabled and check usage if you want to avoid paid requests.
+Before drafting, the script shortlists up to 35 RSS leads and tries to read each linked public HTTPS article page. It uses article paragraphs or article metadata when available, skips pages that block access, and does not bypass paywalls. Leads need enough detail in their RSS snippet or accessible page to support a story. The AI returns numbered candidate IDs instead of URLs; the script attaches the original RSS links and checks every ID against the collected candidates. The workflow does not use paid search grounding. Gemini text generation is still subject to model availability, account quota, and Google’s terms. Keep billing disabled and check usage if you want to avoid paid requests.
 
-If the draft fails validation or there are too few recent leads, the workflow stops and leaves the current edition live. If it passes, the workflow commits it to the repository and publishes it on GitHub Pages. You can also start it from **Actions → Publish India daily news game → Run workflow**.
+If the draft fails validation or fewer than 15 leads have enough evidence, the workflow stops and leaves the current edition live. If it passes, the workflow commits it to the repository and publishes it on GitHub Pages. You can also start it from **Actions → Publish India daily news game → Run workflow**.
 
 ## What the checks cover
 
 The script checks for five stories across at least four topics, two blanks in order per story, three distinct answer choices with one correct answer, varied answer positions, no answer repeated in the headline or unblanked copy, selected source IDs from the collected RSS candidates, and three separate ending-card candidate links. It also blocks casualty counts used as blanks and flags the “X, not Y” sentence pattern.
 
-The draft is based on RSS headlines and snippets, which can be brief. The AI is instructed to skip stories without enough detail and avoid adding unsupported facts. The checks can catch structural and source-link problems; they cannot guarantee that every statement is true or that every story has enough context. The workflow fails closed when a check does not pass, but this is not a substitute for a human editor.
+The draft uses RSS headlines and snippets plus accessible article-page text or metadata. Some pages block access or provide too little context; those candidates are skipped. The AI is instructed to skip unsupported stories rather than fill gaps from memory. The checks can catch structural and source-link problems; they cannot guarantee that every statement is true or that every story has enough context. The workflow fails closed when a check does not pass, but this is not a substitute for a human editor.
 
 ## One-time setup
 
