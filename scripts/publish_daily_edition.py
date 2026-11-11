@@ -369,8 +369,12 @@ def validate_edition(edition, candidates):
         for n, answer, options in ((1, story["answer"], story.get("options")), (2, story["answer2"], story.get("options2"))):
             if any(re.search(r"\d", str(option)) for option in (options or [])):
                 raise RuntimeError("Story " + str(index) + " blank " + str(n) + " uses a numeric answer choice.")
-            if not isinstance(options, list) or len(options) != 3 or len(set(options)) != 3 or options.count(answer) != 1:
+            clean_options = [str(option).strip() for option in options] if isinstance(options, list) else []
+            answer_matches = [i for i, option in enumerate(clean_options) if option.casefold() == answer.strip().casefold()]
+            if len(clean_options) != 3 or len({option.casefold() for option in clean_options}) != 3 or len(answer_matches) != 1:
                 raise RuntimeError("Story " + str(index) + " blank " + str(n) + " needs three different choices and one correct answer.")
+            clean_options[answer_matches[0]] = answer
+            options = clean_options
             # Place correct answers in the least-used position so ordering stays
             # balanced even when the model repeatedly returns the answer first.
             position = first_positions.index(min(first_positions))
