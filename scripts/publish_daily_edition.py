@@ -133,7 +133,8 @@ class ArticleContextParser(HTMLParser):
     def _collect_jsonld(self, value):
         if isinstance(value, dict):
             type_value = value.get("@type", [])
-            types = {type_value} if isinstance(type_value, str) else set(type_value) if isinstance(type_value, list) else set()
+            raw_types = {type_value} if isinstance(type_value, str) else set(type_value) if isinstance(type_value, list) else set()
+            types = {str(value).rsplit("/", 1)[-1].rsplit("#", 1)[-1] for value in raw_types}
             if types.intersection({"Article", "NewsArticle", "Report", "BlogPosting"}):
                 for key in ("articleBody", "description"):
                     text = value.get(key)
@@ -158,6 +159,9 @@ class ArticleContextParser(HTMLParser):
 
 def fetch_article_context(url):
     try:
+        parsed = urlsplit(url)
+        if parsed.scheme != "https" or not parsed.hostname:
+            return ""
         request = Request(url, headers={
             "User-Agent": "DailyNewsGameIndia/1.0 (+public news explainer; contact: project repository)",
             "Accept": "text/html,application/xhtml+xml"
@@ -306,7 +310,7 @@ def validate_edition(edition, candidates):
     if not isinstance(stories, list):
         raise RuntimeError("The draft did not return a story list.")
     if len(stories) < 5:
-        raise RuntimeError("Only " + str(len(stories)) + " stories had enough RSS detail; refusing to publish a thin edition.")
+        raise RuntimeError("Only " + str(len(stories)) + " stories had enough RSS/article detail; refusing to publish a thin edition.")
     if len(stories) > 5:
         raise RuntimeError("The draft must contain exactly five stories.")
     if not isinstance(extras, list) or len(extras) != 3:
@@ -392,7 +396,7 @@ For each story: write a specific headline; write a natural, simple story of 2–
 
 Attribute allegations and changing estimates. Include specific people, places, dates, decisions, and amounts when they matter. A significant disaster may be covered; describe verified location and magnitude where relevant, and mention rescue, relief, or recovery work underway. Never make death, injury, casualty, or graphic-harm counts into a blank or score.
 
-Use only candidates whose title and snippet together support the key who/what/where and why of the story. Skip thin or vague leads: do not fill missing context from memory or guess what an article probably says. If fewer than five candidates can support complete, accurate stories, return fewer than five stories; the publishing check will keep the previous edition live rather than publish guessed copy. For each story, return candidateIds containing the number of the most relevant candidate or candidates used. Do not return URLs. Each candidate has an id number. For moreToday, return candidateId for a different relevant candidate not already used among the five stories. The script will attach the original URLs, so do not write or alter URLs.
+Use only candidates whose supplied evidence supports the key who/what/where and why of the story. Skip thin or vague leads: do not fill missing context from memory or guess what an article probably says. If fewer than five candidates can support complete, accurate stories, return fewer than five stories; the publishing check will keep the previous edition live rather than publish guessed copy. For each story, return candidateIds containing the number of the most relevant candidate or candidates used. Do not return URLs. Each candidate has an id number. For moreToday, return candidateId for a different relevant candidate not already used among the five stories. The script will attach the original URLs, so do not write or alter URLs.
 
 The candidates below have stable integer id values, publisher names, timestamps, topics, and evidence gathered from RSS snippets plus accessible article-page text or metadata. Cite them by id. Use only the supplied evidence; skip a story if it does not establish enough facts to explain what happened and why. Article pages that block access or provide too little detail are excluded. Do not infer missing facts from a headline. The script will add the original source links.
 
@@ -411,7 +415,7 @@ def main():
             edition = validate_edition(edition, candidates)
             break
         except RuntimeError as error:
-            if "had enough RSS detail" in str(error) or attempt == 2:
+            if "had enough RSS/article detail" in str(error) or attempt == 2:
                 raise
             failures.append("Draft attempt " + str(attempt + 1) + " failed validation: " + str(error))
             prompt = build_prompt(candidates, failures)
