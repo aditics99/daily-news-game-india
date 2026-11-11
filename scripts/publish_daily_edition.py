@@ -39,16 +39,14 @@ SCHEMA = {
                 "answer2": {"type": "string"},
                 "options2": {"type": "array", "items": {"type": "string"}},
                 "explanation": {"type": "string"},
-                "sources": {"type": "array", "items": {"type": "object", "properties": {
-                    "label": {"type": "string"}, "url": {"type": "string"}
-                }, "required": ["label", "url"], "additionalProperties": False}}
+                "candidateIds": {"type": "array", "items": {"type": "integer", "minimum": 1, "maximum": 25}}
             },
-            "required": ["section", "headline", "copy", "answer", "options", "answer2", "options2", "explanation", "sources"],
+            "required": ["section", "headline", "copy", "answer", "options", "answer2", "options2", "explanation", "candidateIds"],
             "additionalProperties": False
         }},
         "moreToday": {"type": "array", "items": {"type": "object", "properties": {
-            "text": {"type": "string"}, "url": {"type": "string"}
-        }, "required": ["text", "url"], "additionalProperties": False}}
+            "text": {"type": "string"}, "candidateId": {"type": "integer", "minimum": 1, "maximum": 25}
+        }, "required": ["text", "candidateId"], "additionalProperties": False}}
     },
     "required": ["stories", "moreToday"],
     "additionalProperties": False
@@ -115,7 +113,10 @@ def fetch_candidates(now):
             break
     if len(picked) < 15:
         raise RuntimeError("Only " + str(len(picked)) + " recent India leads were found; refusing to publish a thin edition. Feed status: " + ", ".join(failures))
-    return picked[:25], failures
+    picked = picked[:25]
+    for candidate_id, item in enumerate(picked, start=1):
+        item["id"] = candidate_id
+    return picked, failures
 
 
 def api_response(prompt):
@@ -150,11 +151,7 @@ def api_response(prompt):
     except json.JSONDecodeError as error:
         raise RuntimeError("The news-writing service returned unreadable structured content.") from error
 
-    searched = {canonical_url(url) for url in re.findall(r'https://[^\s"]+', prompt)}
-    if not searched:
-        raise RuntimeError("News feed provided no source links; refusing to publish.")
-        
-    return edition, searched
+    return edition
 
 
 def canonical_url(value):
@@ -170,13 +167,16 @@ def contains_answer(text, answer):
     return bool(re.search(r"(?<![\w])" + re.escape(answer.strip()) + r"(?![\w])", text, re.I))
 
 
-def validate_edition(edition, searched):
+def validate_edition(edition, candidates):
     stories = edition.get("stories")
     extras = edition.get("moreToday")
     if not isinstance(stories, list) or len(stories) != 5:
         raise RuntimeError("The draft must contain exactly five stories.")
     if not isinstance(extras, list) or len(extras) != 3:
         raise RuntimeError("The ending card needs three verified extra stories.")
+    candidate_by_id = {item["id"]: item for item in candidates}
+    allowed_source_urls = {canonical_url(item["url"]) for item in candidates}
+    used_candidate_ids = set()
     sections = [story.get("section") for story in stories]
     if len(set(sections)) < 4 or max(sections.count(section) for section in set(sections)) > 2:
         raise RuntimeError("The five stories did not cover enough different topics.")
@@ -202,22 +202,35 @@ def validate_edition(edition, searched):
                 sentence = (before.rsplit(".", 1)[-1] + " " + after.split(".", 1)[0]).lower()
                 if re.search(r"\b(dead|died|death|killed|injured|casualties|fatalities)\b", sentence):
                     raise RuntimeError("Story " + str(index) + " uses a number beside a human casualty detail as a blank.")
-        sources = story.get("sources")
-        if not isinstance(sources, list) or len(sources) < 1:
-            raise RuntimeError("Story " + str(index) + " needs at least one source link.")
-        
-        for source in sources:
-            url = source.get("url", "")
-            if not url.startswith("https://") or canonical_url(url) not in searched:
-                raise RuntimeError("Story " + str(index) + " includes a link that was not returned by web search.")
-                    
+        candidate_ids = story.get("candidateIds")
+        if not isinstance(candidate_ids, list) or not candidate_ids or any(type(value) is not int or value not in candidate_by_id for value in candidate_ids):
+            raise RuntimeError("Story " + str(index) + " must cite one or more numbered RSS candidates.")
+        if len(set(candidate_ids)) != len(candidate_ids) or any(value in used_candidate_ids for value in candidate_ids):
+            raise RuntimeError("Story " + str(index) + " reuses an RSS candidate already assigned to another story.")
+        used_candidate_ids.update(candidate_ids)
+        story["sources"] = [
+            {"label": candidate_by_id[value]["source"], "url": candidate_by_id[value]["url"]}
+            for value in candidate_ids
+        ]
+        story.pop("candidateIds", None)
+        for source in story["sources"]:
+            if canonical_url(source["url"]) not in allowed_source_urls:
+                raise RuntimeError("Story " + str(index) + " source did not come from the RSS candidate list.")
 
-                        
     if min(first_positions) < 1 or max(first_positions) > 5:
         raise RuntimeError("Correct answers are too concentrated in one dropdown position.")
     for extra in extras:
-        if not extra.get("text") or not extra.get("url", "").startswith("https://") or canonical_url(extra["url"]) not in searched:
-            raise RuntimeError("An ending-card link is missing or was not returned by web search.")
+        candidate_id = extra.get("candidateId")
+        if not extra.get("text") or type(candidate_id) is not int or candidate_id not in candidate_by_id:
+            raise RuntimeError("An ending-card item must use a numbered RSS candidate.")
+        if candidate_id in used_candidate_ids:
+            raise RuntimeError("An ending-card item must use a different candidate from the five main stories.")
+        used_candidate_ids.add(candidate_id)
+        extra["url"] = candidate_by_id[candidate_id]["url"]
+        extra.pop("candidateId", None)
+        if canonical_url(extra["url"]) not in allowed_source_urls:
+            raise RuntimeError("An ending-card link did not come from the RSS candidate list.")
+
     edition["date"] = datetime.now(timezone.utc).astimezone(IST).date().isoformat()
     return edition
 
@@ -225,7 +238,7 @@ def validate_edition(edition, searched):
 def build_prompt(candidates, failures):
     today = datetime.now(timezone.utc).astimezone(IST).strftime("%A, %d %B %Y")
     payload = json.dumps(candidates, ensure_ascii=False)
-    return f"""Prepare the {today} edition using only the India news candidates below. Use only facts included in each candidate title and description; do not add unsupported details. Choose five important stories across different topics. Use source URLs only from the candidates. The links open the original publishers. Do not use paid search tools or invent facts or links.
+    return f"""Prepare the {today} edition using only the India news candidates below. Use only facts included in each candidate title and description; do not add unsupported details. Choose five important stories across different topics. Use only facts in the candidate titles and descriptions. The script will add the selected candidates’ source links. Do not use paid search tools or invent facts.
 
 Choose exactly five of the most significant, genuinely current India stories from the past day. Cover different parts of life in India: politics and public life, business and money, everyday services, science/environment, sport, culture/entertainment. Spread the five across at least four topic categories; use no more than two from one category. Do not choose a story solely because it is easy to quiz.
 
@@ -233,11 +246,11 @@ For each story: write a specific headline; write a natural, simple story of 2–
 
 Attribute allegations and changing estimates. Include specific people, places, dates, decisions, and amounts when they matter. A significant disaster may be covered; describe verified location and magnitude where relevant, and mention rescue, relief, or recovery work underway. Never make death, injury, casualty, or graphic-harm counts into a blank or score.
 
-Source each story with at least one relevant HTTPS URL copied exactly from the candidate list. Never substitute or construct a URL. Use only links that support that story. Choose three extra links from other candidates.
+For each story, return candidateIds containing the number of the most relevant candidate or candidates used. Do not return URLs. Each candidate has an id number. For moreToday, return candidateId for a different relevant candidate not already used among the five stories. The script will attach the original URLs, so do not write or alter URLs.
 
-The candidates below contain current headlines, publisher names, short snippets, timestamps, topics, and article links. Use these as your only factual basis and source links; choose stories with enough detail to write accurately.
+The candidates below have stable integer id values plus current headlines, publisher names, short snippets, timestamps, topics, and article links. Cite them by id. Use these as your only factual basis; choose stories with enough detail to write accurately.
 
-Return only valid JSON with this shape: {{"stories":[{{"section":"...","headline":"...","copy":"...","answer":"...","options":["...","...","..."],"answer2":"...","options2":["...","...","..."],"explanation":"...","sources":[{{"label":"...","url":"https://..."}},{{"label":"...","url":"https://..."}}]}}],"moreToday":[{{"text":"...","url":"https://..."}},{{"text":"...","url":"https://..."}},{{"text":"...","url":"https://..."}}]}}. Each story must include exactly the named fields. Explain unfamiliar acronyms and institutions in plain language at first mention. Category must be one of: {', '.join(CATEGORIES)}.
+Return only valid JSON with this shape: {{"stories":[{{"section":"...","headline":"...","copy":"...","answer":"...","options":["...","...","..."],"answer2":"...","options2":["...","...","..."],"explanation":"...","candidateIds":[1]}}],"moreToday":[{{"text":"...","candidateId":6}},{{"text":"...","candidateId":7}},{{"text":"...","candidateId":8}}]}}. Each story must include exactly the named fields. Explain unfamiliar acronyms and institutions in plain language at first mention. Category must be one of: {', '.join(CATEGORIES)}.
 PREVIOUS VALIDATION ISSUES: {json.dumps(failures)}. Fix each issue before returning valid JSON. CANDIDATES:
 {payload}"""
 
@@ -247,9 +260,9 @@ def main():
     candidates, failures = fetch_candidates(now)
     prompt = build_prompt(candidates, failures)
     for attempt in range(3):
-        edition, searched = api_response(prompt)
+        edition = api_response(prompt)
         try:
-            edition = validate_edition(edition, searched)
+            edition = validate_edition(edition, candidates)
             break
         except RuntimeError as error:
             if attempt == 2:
