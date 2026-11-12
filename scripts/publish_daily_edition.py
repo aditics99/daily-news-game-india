@@ -6,7 +6,7 @@ from html import unescape
 from html.parser import HTMLParser
 from urllib.parse import quote_plus, urlsplit
 from urllib.request import Request, urlopen
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 from pathlib import Path
 import copy
 import json
@@ -380,15 +380,39 @@ def api_response(prompt):
 
     request_body = {
         "contents": [{"parts": [{"text": prompt}]}],
-        
         "generationConfig": {"temperature": 0.2, "maxOutputTokens": 12000, "responseMimeType": "application/json", "responseSchema": SCHEMA}
     }
     request = Request(API_URL + "/" + MODEL + ":generateContent", data=json.dumps(request_body).encode(), headers={"x-goog-api-key": key, "Content-Type": "application/json"}, method="POST")
-    try:
-        with urlopen(request, timeout=600) as response:
-            result = json.loads(response.read())
-    except Exception as error:
-                raise RuntimeError("Gemini request failed" + (" (HTTP " + str(error.code) + ": " + json.loads(error.read().decode("utf-8")).get("error", {}).get("message", "")[:400] + ")" if hasattr(error, "code") else " (" + type(error).__name__ + ")")) from error
+
+    def is_retryable(error):
+        if isinstance(error, HTTPError):
+            return error.code == 429 or 500 <= error.code <= 599
+        if isinstance(error, TimeoutError):
+            return True
+        if isinstance(error, URLError) and isinstance(error.reason, TimeoutError):
+            return True
+        return False
+
+    result = None
+    for attempt in range(4):  # initial request plus three retries
+        try:
+            with urlopen(request, timeout=600) as response:
+                result = json.loads(response.read())
+            break
+        except Exception as error:
+            if is_retryable(error) and attempt < 3:
+                pause = 2 ** (attempt + 1)
+                print("Gemini temporary failure (" + type(error).__name__ + "); retry " + str(attempt + 1) + "/3 in " + str(pause) + " seconds.")
+                time.sleep(pause)
+                continue
+            if isinstance(error, HTTPError):
+                detail = error.read().decode("utf-8", errors="replace")
+                try:
+                    message = json.loads(detail).get("error", {}).get("message", "")
+                except (ValueError, AttributeError):
+                    message = detail[:400]
+                raise RuntimeError("Gemini request failed (HTTP " + str(error.code) + ": " + message[:400] + ")") from error
+            raise RuntimeError("Gemini request failed (" + type(error).__name__ + ")") from error
 
     candidates = result.get("candidates") or []
     if not candidates:
@@ -396,8 +420,8 @@ def api_response(prompt):
     candidate = candidates[0]
     parts = (candidate.get("content") or {}).get("parts", [])
     text = "".join(part.get("text", "") for part in parts).strip()
-    if text.startswith("```"):
-        text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text, flags=re.I).strip()
+    if text.startswith("\u0060\u0060\u0060"):
+        text = re.sub(r"^\u0060\u0060\u0060(?:json)?\s*|\s*\u0060\u0060\u0060$", "", text, flags=re.I).strip()
     if not text:
         raise RuntimeError("The news-writing service returned no structured story set.")
     try:
@@ -568,8 +592,15 @@ def main():
         except RuntimeError as error:
             if "had enough GDELT/article detail" in str(error) or attempt == 4:
                 raise
+            print("Draft attempt " + str(attempt + 1) + " failed validation: " + str(error))
             failures.append("Draft attempt " + str(attempt + 1) + " failed validation: " + str(error))
             prompt = build_repair_prompt(edition, candidates, error)
+    if os.environ.get("DRY_RUN", "").strip().lower() in {"1", "true", "yes", "on"}:
+        preview_path = Path("edition-preview.json")
+        preview_path.write_text(json.dumps(edition, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        print("DRY_RUN=1: validated edition written to edition-preview.json; site files were not changed.")
+        return
+
     game_path = Path("news-game.js")
     game = game_path.read_text(encoding="utf-8")
     app_marker = 'const app = document.querySelector("#app");'
