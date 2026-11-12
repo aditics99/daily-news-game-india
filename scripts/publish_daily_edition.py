@@ -381,7 +381,7 @@ def api_response(prompt):
     request_body = {
         "contents": [{"parts": [{"text": prompt}]}],
         
-        "generationConfig": {"temperature": 0.2, "maxOutputTokens": 12000}
+        "generationConfig": {"temperature": 0.2, "maxOutputTokens": 12000, "responseMimeType": "application/json", "responseSchema": SCHEMA}
     }
     request = Request(API_URL + "/" + MODEL + ":generateContent", data=json.dumps(request_body).encode(), headers={"x-goog-api-key": key, "Content-Type": "application/json"}, method="POST")
     try:
