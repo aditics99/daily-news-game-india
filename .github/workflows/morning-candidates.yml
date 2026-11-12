@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: "30 1 * * *" # 7:00 AM India time
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Generate and validate a preview without publishing
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -11,7 +17,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: github-pages
+  group: ${{ github.event.inputs.dry_run == 'true' && format('daily-news-dry-run-{0}', github.run_id) || 'daily-news-publish' }}
   cancel-in-progress: false
 
 jobs:
@@ -31,8 +37,17 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GITHUB_RUN_NUMBER: ${{ github.run_number }}
+          DRY_RUN: ${{ github.event.inputs.dry_run == 'true' && '1' || '0' }}
         run: python scripts/publish_daily_edition.py
+      - name: Save dry-run preview
+        if: ${{ github.event.inputs.dry_run == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: india-edition-preview
+          path: edition-preview.json
+          if-no-files-found: error
       - name: Commit the generated edition
+        if: ${{ github.event.inputs.dry_run != 'true' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -44,15 +59,19 @@ jobs:
             git push
           fi
       - name: Configure Pages
+        if: ${{ github.event.inputs.dry_run != 'true' }}
         uses: actions/configure-pages@v5
       - name: Prepare the site
+        if: ${{ github.event.inputs.dry_run != 'true' }}
         run: |
           mkdir -p dist
           cp index.html editorial.html app.js styles.css supabase-config.js news-game.css news-game.js dist/
       - name: Upload Pages artifact
+        if: ${{ github.event.inputs.dry_run != 'true' }}
         uses: actions/upload-pages-artifact@v3
         with:
           path: dist
       - name: Publish today’s edition
+        if: ${{ github.event.inputs.dry_run != 'true' }}
         id: deployment
         uses: actions/deploy-pages@v4
