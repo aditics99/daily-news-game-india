@@ -541,7 +541,7 @@ def build_repair_prompt(edition, candidates, error):
     } for item in candidates]
     return f"""Repair this draft using only the collected article evidence. The validator reported: {str(error)}
 
-This is a targeted repair. Preserve valid stories, topics, explanations, and candidateIds. Return the complete edition as valid JSON in the same schema.
+This is a targeted repair. Preserve valid stories, topics, explanations, and candidateIds unless the reported problem concerns that item. Return the complete edition as valid JSON in the same schema. If the reported problem concerns the ending card or moreToday, keep all five stories unchanged. Return exactly three moreToday items. Each item must have concise, specific text supported by one candidate's supplied evidence and a candidateId for that candidate. Use three distinct candidate IDs that do not appear in any story's candidateIds. Do not reuse a main-story candidate, invent details, or add URLs. If the draft has fewer than three usable items, select replacements from the remaining candidate evidence below.
 
 If an unblanked sentence gives away a blank, locate the named story and blank. Replace the entire sentence that reveals the answer with a different specific fact stated in that story's candidate evidence. Do not repeat the answer anywhere in the headline or unblanked copy, and do not use a synonym or another clue that makes it obvious. Keep both blank markers exactly once and in order. If no other supported sentence can be written, change the answer and rewrite that blank using a different fact the evidence supports.
 
