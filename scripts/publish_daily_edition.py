@@ -85,6 +85,22 @@ SCHEMA = {
     
 }
 
+TARGETED_REPAIR_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "repairs": {"type": "array", "items": {
+            "type": "object",
+            "properties": {
+                "storyIndex": {"type": "integer", "minimum": 1, "maximum": 5},
+                "story": SCHEMA["properties"]["stories"]["items"]
+            },
+            "required": ["storyIndex", "story"]
+        }},
+        "moreToday": SCHEMA["properties"]["moreToday"]
+    },
+    "required": ["repairs", "moreToday"]
+}
+
 
 class ArticleContextParser(HTMLParser):
     def __init__(self):
@@ -373,14 +389,14 @@ def fetch_candidates(now):
         item["id"] = candidate_id
     return picked, failures
 
-def api_response(prompt):
+def api_response(prompt, response_schema=SCHEMA):
     key = os.environ.get("GEMINI_API_KEY", "")
     if not key:
         raise RuntimeError("GEMINI_API_KEY is missing. Add it as a GitHub Actions repository secret.")
 
     request_body = {
         "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {"temperature": 0.2, "maxOutputTokens": 12000, "responseMimeType": "application/json", "responseSchema": SCHEMA}
+        "generationConfig": {"temperature": 0.2, "maxOutputTokens": 12000, "responseMimeType": "application/json", "responseSchema": response_schema}
     }
     request = Request(API_URL + "/" + MODEL + ":generateContent", data=json.dumps(request_body).encode(), headers={"x-goog-api-key": key, "Content-Type": "application/json"}, method="POST")
 
@@ -446,92 +462,158 @@ def contains_answer(text, answer):
 
 
 def validate_edition(edition, candidates):
-    stories = edition.get("stories")
-    extras = edition.get("moreToday")
+    errors = []
+
+    def add_error(story_index, message, scope="story"):
+        errors.append({"storyIndex": story_index, "scope": scope, "message": message})
+
+    stories = edition.get("stories") if isinstance(edition, dict) else None
+    extras = edition.get("moreToday") if isinstance(edition, dict) else None
     if not isinstance(stories, list):
-        raise RuntimeError("The draft did not return a story list.")
+        add_error(None, "The draft did not return a story list.", "edition")
+        return errors
     if len(stories) < 5:
-        raise RuntimeError("Only " + str(len(stories)) + " stories had enough GDELT/article detail; refusing to publish a thin edition.")
+        add_error(None, "Only " + str(len(stories)) + " stories had enough GDELT/article detail; refusing to publish a thin edition.", "edition")
     if len(stories) > 5:
-        raise RuntimeError("The draft must contain exactly five stories.")
+        add_error(None, "The draft must contain exactly five stories.", "edition")
     if not isinstance(extras, list) or len(extras) != 3:
-        raise RuntimeError("The ending card needs three verified extra stories.")
+        add_error(None, "The ending card needs three verified extra stories.", "moreToday")
+
     candidate_by_id = {item["id"]: item for item in candidates}
     allowed_source_urls = {canonical_url(item["url"]) for item in candidates}
     used_candidate_ids = set()
-    sections = [story.get("section") for story in stories]
-    if len(set(sections)) < 4 or max(sections.count(section) for section in set(sections)) > 2:
-        raise RuntimeError("The five stories did not cover enough different topics.")
+    sections = []
     first_positions = [0, 0, 0]
+    invalid_answer_stories = set()
+
     for index, story in enumerate(stories, 1):
+        story_error_start = len(errors)
+        if not isinstance(story, dict):
+            add_error(index, "The story must be an object.")
+            continue
+
+        section = story.get("section")
+        sections.append((index, section if isinstance(section, str) else ""))
         for field in ("headline", "copy", "answer", "answer2", "explanation"):
             if not isinstance(story.get(field), str) or not story[field].strip():
-                raise RuntimeError("Story " + str(index) + " is missing " + field + ".")
-        if re.findall(r"\{\{[12]\}\}", story["copy"]) != ["{{1}}", "{{2}}"]:
-            raise RuntimeError("Story " + str(index) + " must contain two blanks in order.")
-        body = story["copy"].replace("{{1}}", " ").replace("{{2}}", " ")
-        for n, answer, options in ((1, story["answer"], story.get("options")), (2, story["answer2"], story.get("options2"))):
-            if any(re.search(r"\d", str(option)) for option in (options or [])):
-                raise RuntimeError("Story " + str(index) + " blank " + str(n) + " uses a numeric answer choice.")
+                add_error(index, "Story " + str(index) + " is missing " + field + ".")
+
+        headline = story.get("headline") if isinstance(story.get("headline"), str) else ""
+        copy_text = story.get("copy") if isinstance(story.get("copy"), str) else ""
+        if re.findall(r"\{\{[12]\}\}", copy_text) != ["{{1}}", "{{2}}"]:
+            add_error(index, "Story " + str(index) + " must contain two blanks in order.")
+        body = copy_text.replace("{{1}}", " ").replace("{{2}}", " ")
+
+        for n, answer_field, options_field in ((1, "answer", "options"), (2, "answer2", "options2")):
+            answer = story.get(answer_field)
+            options = story.get(options_field)
+            if not isinstance(answer, str) or not answer.strip():
+                invalid_answer_stories.add(index)
+                continue
+            if isinstance(options, list) and any(re.search(r"\d", str(option)) for option in options):
+                add_error(index, "Story " + str(index) + " blank " + str(n) + " uses a numeric answer choice.")
             clean_options = [str(option).strip() for option in options] if isinstance(options, list) else []
             answer_matches = [i for i, option in enumerate(clean_options) if option.casefold() == answer.strip().casefold()]
-            if len(clean_options) != 3 or len({option.casefold() for option in clean_options}) != 3 or len(answer_matches) != 1:
-                raise RuntimeError("Story " + str(index) + " blank " + str(n) + " needs three different choices and one correct answer.")
-            clean_options[answer_matches[0]] = answer
-            options = clean_options
-            # Place correct answers in the least-used position so ordering stays
-            # balanced even when the model repeatedly returns the answer first.
-            position = first_positions.index(min(first_positions))
-            distractors = [option for option in options if option != answer]
-            story["options" if n == 1 else "options2"] = distractors[:position] + [answer] + distractors[position:]
-            first_positions[position] += 1
-            if contains_answer(body, answer) or contains_answer(story["headline"], answer):
-                raise RuntimeError("Story " + str(index) + " gives away blank " + str(n) + " in its headline or remaining copy.")
-            if re.search(r"\b(?:is|are|was|were)\b[^.!?]{0,100},\s*not\b", story["copy"] + " " + story["explanation"], re.I):
-                raise RuntimeError("Story " + str(index) + " uses the avoided ‘X, not Y’ sentence pattern.")
+            options_valid = len(clean_options) == 3 and len({option.casefold() for option in clean_options}) == 3 and len(answer_matches) == 1
+            if not options_valid:
+                invalid_answer_stories.add(index)
+                add_error(index, "Story " + str(index) + " blank " + str(n) + " needs three different choices and one correct answer.")
+            else:
+                clean_options[answer_matches[0]] = answer
+                position = first_positions.index(min(first_positions))
+                distractors = [option for option in clean_options if option != answer]
+                story[options_field] = distractors[:position] + [answer] + distractors[position:]
+                first_positions[position] += 1
+            if contains_answer(body, answer) or contains_answer(headline, answer):
+                add_error(index, "Story " + str(index) + " gives away blank " + str(n) + " in its headline or remaining copy.")
             if re.search(r"\d", answer):
-                parts = story["copy"].split("{{" + str(n) + "}}", 1)
+                parts = copy_text.split("{{" + str(n) + "}}", 1)
                 before, after = parts if len(parts) == 2 else ("", "")
                 sentence = (before.rsplit(".", 1)[-1] + " " + after.split(".", 1)[0]).lower()
                 if re.search(r"\b(dead|died|death|killed|injured|casualties|fatalities)\b", sentence):
-                    raise RuntimeError("Story " + str(index) + " uses a number beside a human casualty detail as a blank.")
+                    add_error(index, "Story " + str(index) + " uses a number beside a human casualty detail as a blank.")
+
+        if re.search(r"\b(?:is|are|was|were)\b[^.!?]{0,100},\s*not\b", copy_text + " " + str(story.get("explanation", "")), re.I):
+            add_error(index, "Story " + str(index) + " uses the avoided ‘X, not Y’ sentence pattern.")
+
         candidate_ids = story.get("candidateIds")
-        if not isinstance(candidate_ids, list) or not candidate_ids or any(type(value) is not int or value not in candidate_by_id for value in candidate_ids):
-            raise RuntimeError("Story " + str(index) + " must cite one or more numbered GDELT candidates.")
-        story_text = story["headline"] + " " + body
-        if not INDIA_CONTEXT_PATTERN.search(story_text):
-            raise RuntimeError("Story " + str(index) + " does not clearly connect the event to India.")
-        supported_sections = {section for value in candidate_ids for section in candidate_by_id[value]["categories"]}
-        if story["section"] not in supported_sections:
-            raise RuntimeError("Story " + str(index) + " topic does not match its selected candidate.")
-        if len(set(candidate_ids)) != len(candidate_ids) or any(value in used_candidate_ids for value in candidate_ids):
-            raise RuntimeError("Story " + str(index) + " reuses an GDELT candidate already assigned to another story.")
-        used_candidate_ids.update(candidate_ids)
-        story["sources"] = [
-            {"label": candidate_by_id[value]["source"], "url": candidate_by_id[value]["url"]}
-            for value in candidate_ids
-        ]
-        story.pop("candidateIds", None)
-        for source in story["sources"]:
-            if canonical_url(source["url"]) not in allowed_source_urls:
-                raise RuntimeError("Story " + str(index) + " source did not come from the GDELT candidate list.")
+        ids_valid = isinstance(candidate_ids, list) and bool(candidate_ids) and all(
+            type(value) is int and value in candidate_by_id for value in candidate_ids
+        )
+        if not ids_valid:
+            add_error(index, "Story " + str(index) + " must cite one or more numbered GDELT candidates.")
+        else:
+            if len(set(candidate_ids)) != len(candidate_ids) or any(value in used_candidate_ids for value in candidate_ids):
+                add_error(index, "Story " + str(index) + " reuses an GDELT candidate already assigned to another story.")
+            used_candidate_ids.update(candidate_ids)
+            story_text = headline + " " + body
+            if not INDIA_CONTEXT_PATTERN.search(story_text):
+                add_error(index, "Story " + str(index) + " does not clearly connect the event to India.")
+            supported_sections = {section_name for value in candidate_ids for section_name in candidate_by_id[value]["categories"]}
+            if section not in supported_sections:
+                add_error(index, "Story " + str(index) + " topic does not match its selected candidate.")
+            sources = [
+                {"label": candidate_by_id[value]["source"], "url": candidate_by_id[value]["url"]}
+                for value in candidate_ids
+            ]
+            if any(canonical_url(source["url"]) not in allowed_source_urls for source in sources):
+                add_error(index, "Story " + str(index) + " source did not come from the GDELT candidate list.")
+            elif len(errors) == story_error_start:
+                story["sources"] = sources
+                story.pop("candidateIds", None)
+        if len(errors) == story_error_start and not ids_valid:
+            continue
+
+    if len(stories) == 5:
+        section_counts = {}
+        for _, section in sections:
+            section_counts[section] = section_counts.get(section, 0) + 1
+        if len(section_counts) < 4 or max(section_counts.values(), default=0) > 2:
+            repeated = {section for section, count in section_counts.items() if count > 1}
+            needed = max(1, 4 - len(section_counts))
+            affected = []
+            seen_repeated = set()
+            for index, section in sections:
+                if section not in repeated:
+                    continue
+                if section in seen_repeated:
+                    affected.append(index)
+                    if len(affected) >= needed:
+                        break
+                else:
+                    seen_repeated.add(section)
+            if not affected:
+                affected = [index for index, section in sections if section in repeated]
+            for index in affected:
+                add_error(index, "Story " + str(index) + " needs a section that helps the edition cover at least four different topics.")
 
     if min(first_positions) < 1 or max(first_positions) > 5:
-        raise RuntimeError("Correct answers are too concentrated in one dropdown position.")
-    for extra in extras:
-        candidate_id = extra.get("candidateId")
-        if not extra.get("text") or type(candidate_id) is not int or candidate_id not in candidate_by_id:
-            raise RuntimeError("An ending-card item must use a numbered GDELT candidate.")
-        if candidate_id in used_candidate_ids:
-            raise RuntimeError("An ending-card item must use a different candidate from the five main stories.")
-        used_candidate_ids.add(candidate_id)
-        extra["url"] = candidate_by_id[candidate_id]["url"]
-        extra.pop("candidateId", None)
-        if canonical_url(extra["url"]) not in allowed_source_urls:
-            raise RuntimeError("An ending-card link did not come from the GDELT candidate list.")
+        if invalid_answer_stories:
+            for index in sorted(invalid_answer_stories):
+                add_error(index, "Correct answers are too concentrated in one dropdown position.")
+        else:
+            add_error(None, "Correct answers are too concentrated in one dropdown position.", "edition")
+
+    if isinstance(extras, list):
+        for extra_index, extra in enumerate(extras, 1):
+            if not isinstance(extra, dict):
+                add_error(None, "An ending-card item must be an object.", "moreToday")
+                continue
+            candidate_id = extra.get("candidateId")
+            if not isinstance(extra.get("text"), str) or not extra["text"].strip() or type(candidate_id) is not int or candidate_id not in candidate_by_id:
+                add_error(None, "Ending-card item " + str(extra_index) + " must use text and a numbered GDELT candidate.", "moreToday")
+                continue
+            if candidate_id in used_candidate_ids:
+                add_error(None, "Ending-card item " + str(extra_index) + " must use a different candidate from the five main stories and other ending-card items.", "moreToday")
+                continue
+            extra["url"] = candidate_by_id[candidate_id]["url"]
+            extra.pop("candidateId", None)
+            if canonical_url(extra["url"]) not in allowed_source_urls:
+                add_error(None, "An ending-card link did not come from the GDELT candidate list.", "moreToday")
+            used_candidate_ids.add(candidate_id)
 
     edition["date"] = datetime.now(timezone.utc).astimezone(IST).date().isoformat()
-    return edition
+    return errors
 
 
 def build_prompt(candidates, failures):
@@ -556,6 +638,71 @@ The candidates below have stable integer id values, publisher names, timestamps,
 Return only valid JSON with this shape: {{"stories":[{{"section":"...","headline":"...","copy":"...","answer":"...","options":["...","...","..."],"answer2":"...","options2":["...","...","..."],"explanation":"...","candidateIds":[1]}}],"moreToday":[{{"text":"...","candidateId":6}},{{"text":"...","candidateId":7}},{{"text":"...","candidateId":8}}]}}. Each story must include exactly the named fields. Explain unfamiliar acronyms and institutions in plain language at first mention. Category must be one of: {', '.join(CATEGORIES)}.
 PREVIOUS VALIDATION ISSUES: {json.dumps(failures)}. Repair all listed validation issues before returning JSON. Preserve valid story facts and change only the affected story: replace duplicate choices with distinct plausible choices grounded in its candidate evidence; if an unblanked sentence gives away an answer, replace that sentence with a different verified detail from the same evidence; if blank markers are missing or out of order, rewrite only that story so both markers appear exactly once and in order. Recheck all stories for duplicate choices, answer leaks, exactly two blanks, and numeric answer choices. Do not invent facts. CANDIDATES:
 {payload}"""
+
+
+def build_targeted_repair_prompt(draft, candidates, story_errors, more_errors):
+    target_indices = sorted({error["storyIndex"] for error in story_errors})
+    target_stories = [
+        {"storyIndex": index, "story": draft["stories"][index - 1]}
+        for index in target_indices
+    ]
+    evidence = [{
+        "id": item["id"], "publisher": item["source"], "title": item["title"],
+        "topics": item["categories"], "evidence": item["evidence"]
+    } for item in candidates]
+    ending_instructions = (
+        "Repair the ending card errors listed below. Return exactly three concise items, each with text and a candidateId for a distinct candidate not used by any main story. Do not return URLs."
+        if more_errors else
+        "There are no ending-card errors. Return an empty moreToday array."
+    )
+    return f"""Repair only the named stories in this draft, using only the supplied article evidence. Return a repairs array with exactly one entry for each requested storyIndex. Each entry must contain storyIndex and a complete replacement story in the required schema. Do not return, revise, or summarize any other story. The script will splice each replacement into the original draft, so every unlisted story will remain unchanged.
+
+For each targeted story, fix every listed validation error. Preserve its supported facts, headline, explanation, candidateIds, and wording wherever they are already valid. Change candidateIds only when needed to resolve a reported source or topic mismatch. Do not add sources or URLs. Use only facts in the supplied candidate evidence. Keep exactly two blanks in order, each with three distinct choices and one correct answer. Do not leave an answer revealed elsewhere in that same story.
+
+STORY ERRORS:
+{json.dumps(story_errors, ensure_ascii=False)}
+
+STORIES TO REPAIR:
+{json.dumps(target_stories, ensure_ascii=False)}
+
+ENDING CARD: {ending_instructions}
+ENDING-CARD ERRORS:
+{json.dumps(more_errors, ensure_ascii=False)}
+CURRENT ENDING CARD:
+{json.dumps(draft.get("moreToday"), ensure_ascii=False)}
+
+CANDIDATE EVIDENCE:
+{json.dumps(evidence, ensure_ascii=False)}
+
+Return only JSON matching this shape: {{"repairs":[{{"storyIndex":1,"story":{{"section":"...","headline":"...","copy":"...","answer":"...","options":["...","...","..."],"answer2":"...","options2":["...","...","..."],"explanation":"...","candidateIds":[1]}}}}],"moreToday":[]}}. Include only requested story indices in repairs. If ending-card errors are listed, moreToday must contain exactly three fixed items; otherwise it must be empty."""
+
+
+def splice_targeted_repairs(draft, response, story_errors, more_errors):
+    expected = {error["storyIndex"] for error in story_errors}
+    repairs = response.get("repairs") if isinstance(response, dict) else None
+    if not isinstance(repairs, list):
+        raise RuntimeError("The targeted repair did not return a repairs list.")
+    received = set()
+    replacements = []
+    for entry in repairs:
+        if not isinstance(entry, dict):
+            raise RuntimeError("A targeted repair entry was not an object.")
+        index = entry.get("storyIndex")
+        story = entry.get("story")
+        if type(index) is not int or index not in expected or index in received or not isinstance(story, dict):
+            raise RuntimeError("The targeted repair returned an unexpected or duplicate story index.")
+        received.add(index)
+        replacements.append((index, story))
+    if received != expected:
+        raise RuntimeError("The targeted repair did not return every affected story.")
+    more_today = response.get("moreToday") if isinstance(response, dict) else None
+    if more_errors and (not isinstance(more_today, list) or len(more_today) != 3):
+        raise RuntimeError("The targeted repair did not return three ending-card items.")
+
+    for index, story in replacements:
+        draft["stories"][index - 1] = story
+    if more_errors:
+        draft["moreToday"] = more_today
 
 
 def build_repair_prompt(edition, candidates, error):
@@ -584,17 +731,40 @@ def main():
     now = datetime.now(timezone.utc)
     candidates, failures = fetch_candidates(now)
     prompt = build_prompt(candidates, failures)
+    draft = api_response(prompt)
+    edition = None
+
     for attempt in range(5):
-        edition = api_response(prompt)
-        try:
-            edition = validate_edition(copy.deepcopy(edition), candidates)
+        checked_edition = copy.deepcopy(draft)
+        errors = validate_edition(checked_edition, candidates)
+        if not errors:
+            edition = checked_edition
             break
+
+        for error in errors:
+            label = "Story " + str(error["storyIndex"]) if error["storyIndex"] is not None else error["scope"]
+            print("Draft attempt " + str(attempt + 1) + " failed validation [" + label + "]: " + error["message"])
+
+        if attempt == 4:
+            summary = "; ".join(error["message"] for error in errors)
+            raise RuntimeError("Draft still has validation errors after five attempts: " + summary)
+
+        story_errors = [error for error in errors if error["scope"] == "story"]
+        more_errors = [error for error in errors if error["scope"] == "moreToday"]
+        edition_errors = [error for error in errors if error["scope"] == "edition"]
+        if edition_errors:
+            summary = "; ".join(error["message"] for error in edition_errors)
+            raise RuntimeError("Edition-level validation failed: " + summary)
+
+        repair_prompt = build_targeted_repair_prompt(draft, candidates, story_errors, more_errors)
+        repairs = api_response(repair_prompt, response_schema=TARGETED_REPAIR_SCHEMA)
+        try:
+            splice_targeted_repairs(draft, repairs, story_errors, more_errors)
         except RuntimeError as error:
-            if "had enough GDELT/article detail" in str(error) or attempt == 4:
-                raise
-            print("Draft attempt " + str(attempt + 1) + " failed validation: " + str(error))
-            failures.append("Draft attempt " + str(attempt + 1) + " failed validation: " + str(error))
-            prompt = build_repair_prompt(edition, candidates, error)
+            print("Targeted repair attempt " + str(attempt + 1) + " failed: " + str(error))
+
+    if edition is None:
+        raise RuntimeError("The edition could not be validated.")
     if os.environ.get("DRY_RUN", "").strip().lower() in {"1", "true", "yes", "on"}:
         preview_path = Path("edition-preview.json")
         preview_path.write_text(json.dumps(edition, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -618,6 +788,7 @@ def main():
         raise RuntimeError("Could not safely refresh the game cache version; no edition published.")
     index_path.write_text(updated, encoding="utf-8")
     print("Prepared five verified stories across " + str(len(set(item["section"] for item in edition["stories"]))) + " topics and three extra links for " + edition["date"] + ".")
+
 
 
 if __name__ == "__main__":
