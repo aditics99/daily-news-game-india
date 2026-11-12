@@ -520,7 +520,7 @@ def build_prompt(candidates, failures):
 
 Choose exactly five of the most significant, genuinely current stories about India from the past day. A publisher being based in India does not make an unrelated foreign story an India story; include an international event only when the supplied article explains its direct effect on India. Cover different parts of life in India: politics and public life, business and money, everyday services, science/environment, sport, culture/entertainment. Spread the five across at least four topic categories; use no more than two from one category. Do not choose a story solely because it is easy to quiz.
 
-For each story: write a specific headline; write a natural, simple story of 2–4 short sentences with the literal marker strings "{{{{1}}}}" and "{{{{2}}}}" each appearing exactly once, in that order, as the blanks. Do not use underscores, unlabeled blanks, or other placeholder formats; choose useful facts or connections rather than arbitrary trivia; never make money amounts, votes, shares, percentages, counts, or other numeric totals into blanks; give each blank three distinct, plausible choices and one correct answer; vary correct dropdown positions across the edition; add a conversational explanation that gives useful context and a real-life example where one clarifies an unfamiliar concept. Do not reveal either answer in the headline or elsewhere in the unblanked story. Avoid sentences which explain a term in another sentence and then ask for that same term. Avoid the wording pattern “X, not Y.”
+For each story: write a specific headline; write a natural, simple story of 2–4 short sentences with the literal marker strings "{{{{1}}}}" and "{{{{2}}}}" each appearing exactly once, in that order, as the blanks. Do not use underscores, unlabeled blanks, or other placeholder formats; choose useful facts or connections rather than arbitrary trivia; never make money amounts, votes, shares, percentages, counts, or other numeric totals into blanks; no answer or dropdown choice may contain a digit; if a fact is numeric, choose another useful fact; give each blank three distinct, plausible choices and one correct answer; vary correct dropdown positions across the edition; add a conversational explanation that gives useful context and a real-life example where one clarifies an unfamiliar concept. Do not reveal either answer in the headline or elsewhere in the unblanked story. Avoid sentences which explain a term in another sentence and then ask for that same term. Avoid the wording pattern “X, not Y.”
 
 Attribute allegations and changing estimates. Include specific people, places, dates, decisions, and amounts when they matter. A significant disaster may be covered; describe verified location and magnitude where relevant, and mention rescue, relief, or recovery work underway. Never make death, injury, casualty, or graphic-harm counts into a blank or score.
 
@@ -544,7 +544,7 @@ This is a targeted repair. Preserve valid stories, topics, explanations, and can
 
 If an unblanked sentence gives away a blank, locate the named story and blank. Replace the entire sentence that reveals the answer with a different specific fact stated in that story's candidate evidence. Do not repeat the answer anywhere in the headline or unblanked copy, and do not use a synonym or another clue that makes it obvious. Keep both blank markers exactly once and in order. If no other supported sentence can be written, change the answer and rewrite that blank using a different fact the evidence supports.
 
-If answer choices are duplicated or invalid, replace only the faulty distractor(s) with distinct plausible choices that do not overlap in meaning. Keep the correct answer.
+If answer choices are duplicated or invalid, replace only faulty distractors with distinct plausible choices that do not overlap in meaning. If the validator reports a numeric answer choice, replace that blank with a useful non-numeric fact from the same candidate evidence: rewrite its sentence, answer, and all three choices so none contains a digit. Never quiz money amounts, counts, percentages, or other numeric totals.
 
 Do not invent facts, change candidate IDs unnecessarily, or add URLs. Keep the writing simple and specific. Before returning, check every headline and unblanked sentence against both answers, and ensure each blank has exactly three distinct choices.
 
@@ -559,13 +559,13 @@ def main():
     now = datetime.now(timezone.utc)
     candidates, failures = fetch_candidates(now)
     prompt = build_prompt(candidates, failures)
-    for attempt in range(3):
+    for attempt in range(5):
         edition = api_response(prompt)
         try:
             edition = validate_edition(edition, candidates)
             break
         except RuntimeError as error:
-            if "had enough GDELT/article detail" in str(error) or attempt == 2:
+            if "had enough GDELT/article detail" in str(error) or attempt == 4:
                 raise
             failures.append("Draft attempt " + str(attempt + 1) + " failed validation: " + str(error))
             prompt = build_repair_prompt(edition, candidates, error)
