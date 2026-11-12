@@ -8,6 +8,7 @@ from urllib.parse import quote_plus, urlsplit
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError
 from pathlib import Path
+import copy
 import json
 import os
 import re
@@ -562,7 +563,7 @@ def main():
     for attempt in range(5):
         edition = api_response(prompt)
         try:
-            edition = validate_edition(edition, candidates)
+            edition = validate_edition(copy.deepcopy(edition), candidates)
             break
         except RuntimeError as error:
             if "had enough GDELT/article detail" in str(error) or attempt == 4:
