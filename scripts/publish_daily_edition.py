@@ -19,7 +19,7 @@ from zoneinfo import ZoneInfo
 
 IST = ZoneInfo("Asia/Kolkata")
 API_URL = "https://generativelanguage.googleapis.com/v1beta/models"
-MODEL = "gemini-3.5-flash-lite"
+MODEL = "gemini-2.5-flash-lite"
 CATEGORIES = ["Politics & public life", "Business & money", "Everyday India", "Science & environment", "Sport", "Culture & entertainment"]
 INDIAN_PUBLISHER_HOSTS = (
     "thehindu.com", "timesofindia.indiatimes.com", "indianexpress.com",
