@@ -75,14 +75,14 @@ SCHEMA = {
                 "candidateIds": {"type": "array", "items": {"type": "integer", "minimum": 1, "maximum": 25}}
             },
             "required": ["section", "headline", "copy", "answer", "options", "answer2", "options2", "explanation", "candidateIds"],
-            "additionalProperties": False
+            
         }},
         "moreToday": {"type": "array", "items": {"type": "object", "properties": {
             "text": {"type": "string"}, "candidateId": {"type": "integer", "minimum": 1, "maximum": 25}
-        }, "required": ["text", "candidateId"], "additionalProperties": False}}
+        }, "required": ["text", "candidateId"], }}
     },
     "required": ["stories", "moreToday"],
-    "additionalProperties": False
+    
 }
 
 
