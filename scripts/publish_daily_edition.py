@@ -533,6 +533,28 @@ PREVIOUS VALIDATION ISSUES: {json.dumps(failures)}. Repair all listed validation
 {payload}"""
 
 
+def build_repair_prompt(edition, candidates, error):
+    evidence = [{
+        "id": item["id"], "publisher": item["source"], "title": item["title"],
+        "evidence": item["evidence"]
+    } for item in candidates]
+    return f"""Repair this draft using only the collected article evidence. The validator reported: {str(error)}
+
+This is a targeted repair. Preserve valid stories, topics, explanations, and candidateIds. Return the complete edition as valid JSON in the same schema.
+
+If an unblanked sentence gives away a blank, locate the named story and blank. Replace the entire sentence that reveals the answer with a different specific fact stated in that story's candidate evidence. Do not repeat the answer anywhere in the headline or unblanked copy, and do not use a synonym or another clue that makes it obvious. Keep both blank markers exactly once and in order. If no other supported sentence can be written, change the answer and rewrite that blank using a different fact the evidence supports.
+
+If answer choices are duplicated or invalid, replace only the faulty distractor(s) with distinct plausible choices that do not overlap in meaning. Keep the correct answer.
+
+Do not invent facts, change candidate IDs unnecessarily, or add URLs. Keep the writing simple and specific. Before returning, check every headline and unblanked sentence against both answers, and ensure each blank has exactly three distinct choices.
+
+DRAFT:
+{json.dumps(edition, ensure_ascii=False)}
+
+CANDIDATE EVIDENCE:
+{json.dumps(evidence, ensure_ascii=False)}"""
+
+
 def main():
     now = datetime.now(timezone.utc)
     candidates, failures = fetch_candidates(now)
@@ -546,7 +568,7 @@ def main():
             if "had enough GDELT/article detail" in str(error) or attempt == 2:
                 raise
             failures.append("Draft attempt " + str(attempt + 1) + " failed validation: " + str(error))
-            prompt = build_prompt(candidates, failures)
+            prompt = build_repair_prompt(edition, candidates, error)
     game_path = Path("news-game.js")
     game = game_path.read_text(encoding="utf-8")
     app_marker = 'const app = document.querySelector("#app");'
