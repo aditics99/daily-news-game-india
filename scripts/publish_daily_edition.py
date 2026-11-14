@@ -21,6 +21,14 @@ from zoneinfo import ZoneInfo
 IST = ZoneInfo("Asia/Kolkata")
 API_URL = "https://generativelanguage.googleapis.com/v1beta/models"
 MODEL = "gemini-3.5-flash-lite"
+GENERIC_FILLER_PATTERNS = (
+    r"\bduring recent high-level interactions\b",
+    r"\bthese (?:urban )?(?:developments|initiatives|efforts) illustrate\b",
+    r"\bongoing investments in\b",
+    r"\bmajor urban areas have seen\b",
+    r"\brecognizing traditional agricultural conservation\b",
+    r"\bruling coalition partners have found themselves at loggerheads\b",
+)
 CATEGORIES = ["Politics & public life", "Business & money", "Everyday India", "Science & environment", "Sport", "Culture & entertainment"]
 INDIAN_PUBLISHER_HOSTS = (
     "thehindu.com", "timesofindia.indiatimes.com", "indianexpress.com",
@@ -64,7 +72,6 @@ SCHEMA = {
     "properties": {
         "stories": {"type": "array", "items": {
             "type": "object", "properties": {
-                "section": {"type": "string", "enum": CATEGORIES},
                 "headline": {"type": "string"},
                 "copy": {"type": "string"},
                 "answer": {"type": "string"},
@@ -74,7 +81,7 @@ SCHEMA = {
                 "explanation": {"type": "string"},
                 "candidateIds": {"type": "array", "items": {"type": "integer", "minimum": 1, "maximum": 25}}
             },
-            "required": ["section", "headline", "copy", "answer", "options", "answer2", "options2", "explanation", "candidateIds"],
+            "required": ["headline", "copy", "answer", "options", "answer2", "options2", "explanation", "candidateIds"],
             
         }},
         "moreToday": {"type": "array", "items": {"type": "object", "properties": {
@@ -482,7 +489,6 @@ def validate_edition(edition, candidates):
     candidate_by_id = {item["id"]: item for item in candidates}
     allowed_source_urls = {canonical_url(item["url"]) for item in candidates}
     used_candidate_ids = set()
-    sections = []
     first_positions = [0, 0, 0]
     invalid_answer_stories = set()
 
@@ -492,8 +498,6 @@ def validate_edition(edition, candidates):
             add_error(index, "The story must be an object.")
             continue
 
-        section = story.get("section")
-        sections.append((index, section if isinstance(section, str) else ""))
         for field in ("headline", "copy", "answer", "answer2", "explanation"):
             if not isinstance(story.get(field), str) or not story[field].strip():
                 add_error(index, "Story " + str(index) + " is missing " + field + ".")
@@ -533,6 +537,9 @@ def validate_edition(edition, candidates):
                 if re.search(r"\b(dead|died|death|killed|injured|casualties|fatalities)\b", sentence):
                     add_error(index, "Story " + str(index) + " uses a number beside a human casualty detail as a blank.")
 
+        editorial_text = headline + " " + copy_text + " " + str(story.get("explanation", ""))
+        if any(re.search(pattern, editorial_text, re.I) for pattern in GENERIC_FILLER_PATTERNS):
+            add_error(index, "Story " + str(index) + " uses generic filler; replace it with a specific fact or a plain-language explanation grounded in its sources.")
         if re.search(r"\b(?:is|are|was|were)\b[^.!?]{0,100},\s*not\b", copy_text + " " + str(story.get("explanation", "")), re.I):
             add_error(index, "Story " + str(index) + " uses the avoided ‘X, not Y’ sentence pattern.")
 
@@ -549,9 +556,6 @@ def validate_edition(edition, candidates):
             story_text = headline + " " + body
             if not INDIA_CONTEXT_PATTERN.search(story_text):
                 add_error(index, "Story " + str(index) + " does not clearly connect the event to India.")
-            supported_sections = {section_name for value in candidate_ids for section_name in candidate_by_id[value]["categories"]}
-            if False:  # per-headline topic inference is too noisy; edition-wide coverage is checked below
-                add_error(index, "Story " + str(index) + " topic does not match its selected candidate.")
             sources = [
                 {"label": candidate_by_id[value]["source"], "url": candidate_by_id[value]["url"]}
                 for value in candidate_ids
@@ -563,29 +567,6 @@ def validate_edition(edition, candidates):
                 story.pop("candidateIds", None)
         if len(errors) == story_error_start and not ids_valid:
             continue
-
-    if len(stories) == 5:
-        section_counts = {}
-        for _, section in sections:
-            section_counts[section] = section_counts.get(section, 0) + 1
-        if len(section_counts) < 4 or max(section_counts.values(), default=0) > 2:
-            repeated = {section for section, count in section_counts.items() if count > 1}
-            needed = max(1, 4 - len(section_counts))
-            affected = []
-            seen_repeated = set()
-            for index, section in sections:
-                if section not in repeated:
-                    continue
-                if section in seen_repeated:
-                    affected.append(index)
-                    if len(affected) >= needed:
-                        break
-                else:
-                    seen_repeated.add(section)
-            if not affected:
-                affected = [index for index, section in sections if section in repeated]
-            for index in affected:
-                add_error(index, "Story " + str(index) + " needs a section that helps the edition cover at least four different topics.")
 
     if min(first_positions) < 1 or max(first_positions) > 5:
         if invalid_answer_stories:
@@ -620,22 +601,22 @@ def build_prompt(candidates, failures):
     today = datetime.now(timezone.utc).astimezone(IST).strftime("%A, %d %B %Y")
     prompt_candidates = [{
         "id": item["id"], "publisher": item["source"], "published": item["published"],
-        "topics": item["categories"], "evidence": item["evidence"]
+        "evidence": item["evidence"]
     } for item in candidates]
     payload = json.dumps(prompt_candidates, ensure_ascii=False)
-    return f"""Prepare the {today} edition using only the India news candidates below. Use only facts included in each candidate's supplied evidence; do not add unsupported details. Choose five important stories across different topics. Use only facts in that evidence. The script will add the selected candidates’ source links. Do not use paid search tools or invent facts.
+    return f"""Prepare the {today} edition using only the India news candidates below. Use only facts included in each candidate's supplied evidence; do not add unsupported details. Choose the five most important, well-supported India stories available. Use only facts in the evidence. The script will add the selected candidates’ source links. Do not use paid search tools or invent facts.
 
-Choose exactly five of the most significant, genuinely current stories about India from the past day. A publisher being based in India does not make an unrelated foreign story an India story; include an international event only when the supplied article explains its direct effect on India. Cover different parts of life in India: politics and public life, business and money, everyday services, science/environment, sport, culture/entertainment. Spread the five across at least four topic categories; use no more than two from one category. Do not choose a story solely because it is easy to quiz.
+Choose exactly five of the most significant, genuinely current stories about India from the past day. A publisher being based in India does not make an unrelated foreign story an India story; include an international event only when the supplied article explains its direct effect on India. Select stories by importance and evidence quality. Do not impose a minimum number of topics or reject a strong story just to balance categories. Do not choose a story solely because it is easy to quiz.
 
-For each story: write a specific headline; write a natural, simple story of 2–4 short sentences with the literal marker strings "{{{{1}}}}" and "{{{{2}}}}" each appearing exactly once, in that order, as the blanks. Do not use underscores, unlabeled blanks, or other placeholder formats; choose useful facts or connections rather than arbitrary trivia; never make money amounts, votes, shares, percentages, counts, or other numeric totals into blanks; numeric answer choices are allowed when supported by the story; give each blank three distinct, plausible choices and one correct answer; vary correct dropdown positions across the edition; add a conversational explanation that gives useful context and a real-life example where one clarifies an unfamiliar concept. Do not reveal either answer in the headline or elsewhere in the unblanked story. Avoid sentences which explain a term in another sentence and then ask for that same term. Avoid the wording pattern “X, not Y.”
+For each story: write a specific headline that names the person, place, institution, decision, or event wherever the evidence supports it. Avoid broad labels such as “major developments,” “efforts,” “initiatives,” or “recognizing” without naming what happened. Write a natural, simple story of 2–4 short sentences with the literal marker strings "{{{{1}}}}" and "{{{{2}}}}" each appearing exactly once, in that order, as the blanks. Do not use underscores, unlabeled blanks, or other placeholder formats; choose useful facts or connections rather than arbitrary trivia; never make money amounts, votes, shares, percentages, counts, or other numeric totals into blanks; numeric answer choices are allowed when supported by the story; give each blank three distinct, plausible choices and one correct answer; vary correct dropdown positions across the edition; add a conversational explanation that answers what the news means and why it matters, with the specific people, places, purpose, and next step supported by evidence. Explain unfamiliar institutions or processes in plain language, including who makes decisions and what they are for. Use a concrete real-life example where it helps. Do not add generic filler that could describe any city, policy, or event. Every headline, sentence, and explanation must contain a concrete detail or explain a specific term. Do not reveal either answer in the headline or elsewhere in the unblanked story. Avoid sentences which explain a term in another sentence and then ask for that same term. Avoid the wording pattern “X, not Y.”
 
 Attribute allegations and changing estimates. Include specific people, places, dates, decisions, and amounts when they matter. A significant disaster may be covered; describe verified location and magnitude where relevant, and mention rescue, relief, or recovery work underway. Never make death, injury, casualty, or graphic-harm counts into a blank or score.
 
 Use only candidates whose supplied evidence supports the key who/what/where and why of the story. Skip thin or vague leads: do not fill missing context from memory or guess what an article probably says. If fewer than five candidates can support complete, accurate stories, return fewer than five stories; the publishing check will keep the previous edition live rather than publish guessed copy. For each story, return candidateIds containing the number of the most relevant candidate or candidates used. Do not return URLs. Each candidate has an id number. For moreToday, return candidateId for a different relevant candidate not already used among the five stories. The script will attach the original URLs, so do not write or alter URLs.
 
-The candidates below have stable integer id values, publisher names, timestamps, topics, and evidence gathered from GDELT snippets plus accessible article-page text or metadata. Cite them by id. Use only the supplied evidence; skip a story if it does not establish enough facts to explain what happened and why. Article pages that block access or provide too little detail are excluded. Do not infer missing facts from a headline. The script will add the original source links.
+The candidates below have stable integer id values, publisher names, timestamps, and evidence gathered from GDELT snippets plus accessible article-page text or metadata. Cite them by id. Use only the supplied evidence; skip a story if it does not establish enough facts to explain what happened and why. Article pages that block access or provide too little detail are excluded. Do not infer missing facts from a headline. The script will add the original source links.
 
-Return only valid JSON with this shape: {{"stories":[{{"section":"...","headline":"...","copy":"...","answer":"...","options":["...","...","..."],"answer2":"...","options2":["...","...","..."],"explanation":"...","candidateIds":[1]}}],"moreToday":[{{"text":"...","candidateId":6}},{{"text":"...","candidateId":7}},{{"text":"...","candidateId":8}}]}}. Each story must include exactly the named fields. Explain unfamiliar acronyms and institutions in plain language at first mention. Category must be one of: {', '.join(CATEGORIES)}.
+Return only valid JSON with this shape: {{"stories":[{{"headline":"...","copy":"...","answer":"...","options":["...","...","..."],"answer2":"...","options2":["...","...","..."],"explanation":"...","candidateIds":[1]}}],"moreToday":[{{"text":"...","candidateId":6}},{{"text":"...","candidateId":7}},{{"text":"...","candidateId":8}}]}}. Each story must include exactly the named fields. Explain unfamiliar acronyms and institutions in plain language at first mention.
 PREVIOUS VALIDATION ISSUES: {json.dumps(failures)}. Repair all listed validation issues before returning JSON. Preserve valid story facts and change only the affected story: replace duplicate choices with distinct plausible choices grounded in its candidate evidence; if an unblanked sentence gives away an answer, replace that sentence with a different verified detail from the same evidence; if blank markers are missing or out of order, rewrite only that story so both markers appear exactly once and in order. Recheck all stories for duplicate choices, answer leaks, and exactly two blanks. Do not invent facts. CANDIDATES:
 {payload}"""
 
@@ -648,7 +629,7 @@ def build_targeted_repair_prompt(draft, candidates, story_errors, more_errors):
     ]
     evidence = [{
         "id": item["id"], "publisher": item["source"], "title": item["title"],
-        "topics": item["categories"], "evidence": item["evidence"]
+        "evidence": item["evidence"]
     } for item in candidates]
     ending_instructions = (
         "Repair the ending card errors listed below. Return exactly three concise items, each with text and a candidateId for a distinct candidate not used by any main story. Do not return URLs."
@@ -674,7 +655,7 @@ CURRENT ENDING CARD:
 CANDIDATE EVIDENCE:
 {json.dumps(evidence, ensure_ascii=False)}
 
-Return only JSON matching this shape: {{"repairs":[{{"storyIndex":1,"story":{{"section":"...","headline":"...","copy":"...","answer":"...","options":["...","...","..."],"answer2":"...","options2":["...","...","..."],"explanation":"...","candidateIds":[1]}}}}],"moreToday":[]}}. Include only requested story indices in repairs. If ending-card errors are listed, moreToday must contain exactly three fixed items; otherwise it must be empty."""
+Return only JSON matching this shape: {{"repairs":[{{"storyIndex":1,"story":{{"headline":"...","copy":"...","answer":"...","options":["...","...","..."],"answer2":"...","options2":["...","...","..."],"explanation":"...","candidateIds":[1]}}}}],"moreToday":[]}}. Include only requested story indices in repairs. If ending-card errors are listed, moreToday must contain exactly three fixed items; otherwise it must be empty."""
 
 
 def splice_targeted_repairs(draft, response, story_errors, more_errors):
@@ -712,7 +693,7 @@ def build_repair_prompt(edition, candidates, error):
     } for item in candidates]
     return f"""Repair this draft using only the collected article evidence. The validator reported: {str(error)}
 
-This is a targeted repair. Preserve valid stories, topics, explanations, and candidateIds unless the reported problem concerns that item. Return the complete edition as valid JSON in the same schema. If the reported problem concerns the ending card or moreToday, keep all five stories unchanged. Return exactly three moreToday items. Each item must have concise, specific text supported by one candidate's supplied evidence and a candidateId for that candidate. Use three distinct candidate IDs that do not appear in any story's candidateIds. Do not reuse a main-story candidate, invent details, or add URLs. If the draft has fewer than three usable items, select replacements from the remaining candidate evidence below.
+This is a targeted repair. Preserve valid stories, explanations, and candidateIds unless the reported problem concerns that item. Return the complete edition as valid JSON in the same schema. If the reported problem concerns the ending card or moreToday, keep all five stories unchanged. Return exactly three moreToday items. Each item must have concise, specific text supported by one candidate's supplied evidence and a candidateId for that candidate. Use three distinct candidate IDs that do not appear in any story's candidateIds. Do not reuse a main-story candidate, invent details, or add URLs. If the draft has fewer than three usable items, select replacements from the remaining candidate evidence below.
 
 If an unblanked sentence gives away a blank, locate the named story and blank. Replace the entire sentence that reveals the answer with a different specific fact stated in that story's candidate evidence. Do not repeat the answer anywhere in the headline or unblanked copy, and do not use a synonym or another clue that makes it obvious. Keep both blank markers exactly once and in order. If no other supported sentence can be written, change the answer and rewrite that blank using a different fact the evidence supports.
 
@@ -787,7 +768,7 @@ def main():
     if count != 1:
         raise RuntimeError("Could not safely refresh the game cache version; no edition published.")
     index_path.write_text(updated, encoding="utf-8")
-    print("Prepared five verified stories across " + str(len(set(item["section"] for item in edition["stories"]))) + " topics and three extra links for " + edition["date"] + ".")
+    print("Prepared five verified stories and three extra links for " + edition["date"] + ".")
 
 
 
